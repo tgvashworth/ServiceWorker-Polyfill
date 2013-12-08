@@ -5,7 +5,8 @@
   "main": "Event.js",
   "dependencies": {
     "request": "~2.29.0",
-    "promise": "~3.2.0"
+    "promise": "~3.2.0",
+    "mime": "~1.2.11"
   },
   "devDependencies": {},
   "scripts": {

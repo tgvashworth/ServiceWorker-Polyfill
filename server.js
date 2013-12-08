@@ -6,18 +6,22 @@ var _Responder = require('./_Responder');
 
 // DOM APIs
 var ServiceWorker = require('./ServiceWorker');
-var Event = require('./Event');
-var InstallEvent = require('./InstallEvent');
-var FetchEvent = require('./FetchEvent');
+var CacheList = require('./CacheList');
+var Cache = require('./Cache');
 
 var Response = require('./Response');
 var SameOriginResponse = require('./SameOriginResponse');
 var Request = require('./Request');
 
+var Event = require('./Event');
+var InstallEvent = require('./InstallEvent');
+var FetchEvent = require('./FetchEvent');
+
 // Create worker
 var workerFile = fs.readFileSync(process.argv[3], { encoding: 'utf-8' });
 var worker = new ServiceWorker();
 var workerFn = new Function(
+    'CacheList', 'Cache',
     'Event', 'InstallEvent', 'FetchEvent',
     'Response', 'SameOriginResponse',
     'Request',
@@ -25,6 +29,7 @@ var workerFn = new Function(
 );
 workerFn.call(
     worker,
+    CacheList, Cache,
     Event, InstallEvent, FetchEvent,
     Response, SameOriginResponse,
     Request

@@ -1,6 +1,7 @@
-var NetworkRequest = require('request');
+var _networkRequest = require('request');
 var Promise = require('promise');
 var urlLib = require('url');
+var Response = require('./Response');
 
 module.exports = _Responder;
 
@@ -10,7 +11,6 @@ function _Responder(request, response) {
 }
 
 _Responder.prototype.respond = function (response) {
-    console.log('responding with', response);
     var headers = response.headers;
     var body = response.body;
     if (typeof body !== 'undefined') {
@@ -34,9 +34,9 @@ _Responder.prototype.respond = function (response) {
 };
 
 _Responder.prototype.respondWithNetwork = function () {
-    this.goToNetwork().then(
+    return this.goToNetwork().then(
         this.respond.bind(this)
-    )
+    );
 }
 
 _Responder.prototype.goToNetwork = function () {
@@ -52,10 +52,9 @@ _Responder.prototype.goToNetwork = function () {
             headers: _responder.request.headers,
             body: _responder.request.body
         };
-        console.log('requestConfig', requestConfig);
-        NetworkRequest(requestConfig, function (error, response) {
+        _networkRequest(requestConfig, function (error, response) {
             if (error) return reject(error);
-            resolve(response);
+            resolve(new Response(response));
         });
     });
 };

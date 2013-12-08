@@ -1,10 +1,12 @@
 var hide = require('./hide');
+var CacheList = require('./CacheList');
 
 module.exports = ServiceWorker;
 
 function ServiceWorker() {
     hide(this, 'eventListeners', []);
     this.version = 0;
+    this.caches = new CacheList();
 }
 
 ServiceWorker.prototype.addEventListener = function (type, listener) {
