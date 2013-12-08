@@ -16,7 +16,6 @@ function FetchEvent(request, responder) {
 }
 
 FetchEvent.prototype.respondWith = function (response) {
-
     if (!instanceOf(response, Response) && !instanceOf(response, Promise)) {
         throw new TypeError('respondWith requires a Reponse or a Promise');
     }

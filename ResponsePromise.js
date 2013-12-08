@@ -5,6 +5,5 @@ var Response = require('./Response');
 module.exports = ResponsePromise;
 
 function ResponsePromise(request) {
-    console.log('requesting', request);
     return new _Requester(request);
 }

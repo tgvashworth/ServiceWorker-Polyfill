@@ -1,7 +1,8 @@
-var _networkRequest = require('request');
 var Promise = require('promise');
 var urlLib = require('url');
+var Request = require('./Request');
 var Response = require('./Response');
+var ResponsePromise = require('./ResponsePromise');
 
 module.exports = _Responder;
 
@@ -40,21 +41,13 @@ _Responder.prototype.respondWithNetwork = function () {
 }
 
 _Responder.prototype.goToNetwork = function () {
-    var _responder = this;
-    return new Promise(function (resolve, reject) {
-        var url = urlLib.parse(_responder.request.url, true);
-        var targetUrl = url.query.url;
-        delete url.query.url;
-        var requestConfig = {
-            uri: targetUrl,
-            qs: url.query,
-            method: _responder.request.method,
-            headers: _responder.request.headers,
-            body: _responder.request.body
-        };
-        _networkRequest(requestConfig, function (error, response) {
-            if (error) return reject(error);
-            resolve(new Response(response));
-        });
+    var parsedUrl = urlLib.parse(this.request.url, true);
+    var parsedTarget = urlLib.parse(parsedUrl.query.url, true);
+    var request = new Request({
+        url: urlLib.format(parsedTarget),
+        method: this.request.method,
+        headers: this.request.headers,
+        body: this.request.body
     });
+    return new ResponsePromise(request);
 };

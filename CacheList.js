@@ -33,42 +33,36 @@ CacheList.prototype.set = function (key, value) {
 
 CacheList.prototype.forEach = function (callback, ctx) {
     var cacheMap = this.keys.reduce(function (memo, key) {
-        var index = this._cacheIndexMap[key];
-        memo[key] = this._cacheList[index];
+        memo[key] = this.get(key);
         return memo;
     }.bind(this), {});
 
     return this.keys.forEach(function (key) {
-        var index = this._cacheIndexMap[key];
-        var cache = this._cacheList[index];
+        var cache = this.get(key);
         return callback.call(ctx || cache, cache, key, cacheMap);
     }.bind(this));
 };
 
-Object.defineProperty(CacheList.prototype, 'items', {
+Object.defineProperty(CacheList.prototype, 'values', {
     get: function () {
-        return this.values;
-    },
-    enumberable: true
+        return [].slice.call(this._cacheList);
+    }
 });
 
 Object.defineProperty(CacheList.prototype, 'keys', {
     get: function () {
         return Object.keys(this._cacheIndexMap);
-    },
-    enumberable: true
+    }
 });
 
-Object.defineProperty(CacheList.prototype, 'values', {
+Object.defineProperty(CacheList.prototype, 'items', {
     get: function () {
-        return [].slice.call(this._cacheList);
-    },
-    enumberable: true
+        return this.values;
+    }
 });
 
 Object.defineProperty(CacheList.prototype, 'size', {
     get: function () {
         return this._cacheList.length;
-    },
-    enumberable: true
+    }
 });

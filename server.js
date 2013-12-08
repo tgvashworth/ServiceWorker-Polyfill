@@ -37,6 +37,12 @@ workerFn.call(
 
 // Install it
 var installEvent = new InstallEvent();
+installEvent._install().then(function () {
+    console.log('install success');
+    worker._isInstalled = true;
+}, function () {
+    console.log('install fail');
+});
 worker.dispatchEvent(installEvent);
 console.log('ServiceWorker registered for %s events', installEvent.services.join(' & '));
 
@@ -44,7 +50,9 @@ http.createServer(function (_request, _response) {
     var request = new Request(_request);
     var _responder = new _Responder(_request, _response);
     var fetchEvent = new FetchEvent(request, _responder);
-    worker.dispatchEvent(fetchEvent);
+    if (worker._isInstalled) {
+        worker.dispatchEvent(fetchEvent);
+    }
     if (!fetchEvent.immediatePropagationStopped &&
         !fetchEvent.propagationStopped &&
         !fetchEvent.defaultPrevented) {

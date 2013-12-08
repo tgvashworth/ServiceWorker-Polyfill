@@ -11,20 +11,15 @@ module.exports = _Requester;
 
 function _Requester(request) {
     var url = urlLib.parse(request.url);
-    console.log('url', url);
     var promise;
     if (url.hostname) {
-        console.log('going to the network');
         promise = this.networkRequest(request);
     } else {
-        console.log('Reading from the fs');
         promise = this.fileSystemRequest(request);
     }
     return promise.then(function (response) {
-        console.log('response', response);
         return response;
     }, function (why) {
-        console.log('failed', why);
         throw why;
     });
 }

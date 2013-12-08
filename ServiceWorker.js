@@ -4,26 +4,27 @@ var CacheList = require('./CacheList');
 module.exports = ServiceWorker;
 
 function ServiceWorker() {
-    hide(this, 'eventListeners', []);
+    hide(this, '_eventListeners', []);
     this.version = 0;
     this.caches = new CacheList();
+    this._isInstalled = false;
 }
 
 ServiceWorker.prototype.addEventListener = function (type, listener) {
-    this.eventListeners[type] || (this.eventListeners[type] = []);
-    this.eventListeners[type].push(listener);
+    this._eventListeners[type] || (this._eventListeners[type] = []);
+    this._eventListeners[type].push(listener);
 };
 
 ServiceWorker.prototype.removeEventListener = function (type, listener) {
-    this.eventListeners[type] || (this.eventListeners[type] = []);
-    var index = this.eventListeners[type].indexOf(listener);
+    this._eventListeners[type] || (this._eventListeners[type] = []);
+    var index = this._eventListeners[type].indexOf(listener);
     if (index < 0) return;
-    this.eventListeners[type].splice(index, 1);
+    this._eventListeners[type].splice(index, 1);
 };
 
 ServiceWorker.prototype.dispatchEvent = function (event) {
-    this.eventListeners[event.type] || (this.eventListeners[event.type] = []);
-    this.eventListeners[event.type].some(function (listener) {
+    this._eventListeners[event.type] || (this._eventListeners[event.type] = []);
+    this._eventListeners[event.type].some(function (listener) {
         listener.call(this, event);
         return (!event.propagationStopped && !event.immediatePropagationStopped);
     }.bind(this));
