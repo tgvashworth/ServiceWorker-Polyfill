@@ -1,6 +1,7 @@
 var Promise = require('promise');
 var urlLib = require('url');
 var Request = require('./Request');
+var _ProxyRequest = require('./_ProxyRequest');
 var Response = require('./Response');
 var ResponsePromise = require('./ResponsePromise');
 
@@ -41,13 +42,6 @@ _Responder.prototype.respondWithNetwork = function () {
 }
 
 _Responder.prototype.goToNetwork = function () {
-    var parsedUrl = urlLib.parse(this.request.url, true);
-    var parsedTarget = urlLib.parse(parsedUrl.query.url, true);
-    var request = new Request({
-        url: urlLib.format(parsedTarget),
-        method: this.request.method,
-        headers: this.request.headers,
-        body: this.request.body
-    });
+    var request = new _ProxyRequest(this.request);
     return new ResponsePromise(request);
 };

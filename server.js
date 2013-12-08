@@ -3,6 +3,7 @@ var fs = require('fs');
 
 // Internal APIs
 var _Responder = require('./_Responder');
+var _ProxyRequest = require('./_ProxyRequest');
 
 // DOM APIs
 var ServiceWorker = require('./ServiceWorker');
@@ -38,16 +39,14 @@ workerFn.call(
 // Install it
 var installEvent = new InstallEvent();
 installEvent._install().then(function () {
-    console.log('install success');
     worker._isInstalled = true;
-}, function () {
-    console.log('install fail');
 });
 worker.dispatchEvent(installEvent);
 console.log('ServiceWorker registered for %s events', installEvent.services.join(' & '));
 
+// Create the server (proxy-ish)
 http.createServer(function (_request, _response) {
-    var request = new Request(_request);
+    var request = new _ProxyRequest(_request);
     var _responder = new _Responder(_request, _response);
     var fetchEvent = new FetchEvent(request, _responder);
     if (worker._isInstalled) {

@@ -14,7 +14,6 @@ this.addEventListener('install', function (e) {
     // caches.forEach(console.log.bind(console));
     // console.log('== done ========================');
     // console.log('caches.keys', caches.keys);
-    // console.log('caches.items', caches.items);
     // console.log('caches.values', caches.values);
     // console.log('caches.size', caches.size);
 
@@ -26,6 +25,7 @@ this.addEventListener('install', function (e) {
     });
 
     e.waitUntil(caches.ready()).then(function () {
+        console.log('caches.items', caches.items);
         console.log('== install done ========================');
     }, function (why) {
         console.log('== install failed ========================');
@@ -36,7 +36,9 @@ this.addEventListener('install', function (e) {
 this.addEventListener('fetch', function (e) {
     console.log(e.request.method, e.request.url, e.request.headers);
     // Try to grab the thing from the cache
-    // e.respondWith(this.caches.match(e.request.url));
+    e.respondWith(
+        caches.match(e.request.url)
+    );
     // e.respondWith(new SameOriginResponse({
     //   statusCode: 200,
     //   headers: {
