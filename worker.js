@@ -13,7 +13,6 @@ this.addEventListener('install', function (e) {
 this.addEventListener('fetch', function (event) {
     // Redirect all navigations to the shell page, which can figure out the route
     if (event.type === 'navigate' && event.isTopLevel) {
-        console.log('navigation event!');
         return event.respondWith(
             caches.match('assets/shell.3.html')
         );

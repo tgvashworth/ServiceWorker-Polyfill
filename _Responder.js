@@ -7,10 +7,10 @@ var ResponsePromise = require('./ResponsePromise');
 
 module.exports = _Responder;
 
-function _Responder(request, response) {
+function _Responder(request, response, requestIsNavigate) {
     this.request = request;
     this.response = response;
-    this.requestType = (request.headers['accept'].match(/^text\/html/i) ? 'navigate' : 'fetch');
+    this.requestType = (requestIsNavigate ? 'navigate' : 'fetch');
 }
 
 _Responder.prototype.respond = function (response) {

@@ -1,5 +1,6 @@
 var http = require('http');
 var fs = require('fs');
+var WebSocketServer = require('ws').Server;
 
 // Internal APIs
 var _Responder = require('./_Responder');
@@ -51,11 +52,15 @@ installEvent._install().then(function () {
 worker.dispatchEvent(installEvent);
 console.log('ServiceWorker registered for %s events', installEvent.services.join(' & '));
 
+// Hacky, hacky, hacky :)
+var requestIsNavigate = false;
+
 // Create the server (proxy-ish)
-http.createServer(function (_request, _response) {
+var server = http.createServer(function (_request, _response) {
     var request = new _ProxyRequest(_request);
-    var _responder = new _Responder(_request, _response);
+    var _responder = new _Responder(_request, _response, requestIsNavigate);
     var fetchEvent = new FetchEvent(request, _responder);
+    requestIsNavigate = false;
     if (worker._isInstalled) {
         worker.dispatchEvent(fetchEvent);
     }
@@ -67,3 +72,15 @@ http.createServer(function (_request, _response) {
         });
     }
 }).listen(process.argv[2]);
+
+var wss = new WebSocketServer({ server: server });
+wss.on('connection', function (ws) {
+    console.log('ws connection');
+    ws.on('message', function (message) {
+        var data = JSON.parse(message);
+        console.log('ws message', message);
+        if (data.type === 'navigate') {
+            requestIsNavigate = true;
+        }
+    });
+});
