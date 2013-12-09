@@ -57,6 +57,9 @@ var requestIsNavigate = false;
 
 // Create the server (proxy-ish)
 var server = http.createServer(function (_request, _response) {
+    console.log('== REQUEST ========================================== !! ====');
+    console.log(_request.url);
+    console.log('===================================================== !! ====');
     var request = new _ProxyRequest(_request);
     var _responder = new _Responder(_request, _response, requestIsNavigate);
     var fetchEvent = new FetchEvent(request, _responder);

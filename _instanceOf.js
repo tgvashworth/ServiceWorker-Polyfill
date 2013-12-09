@@ -1,4 +1,4 @@
-var getPrototypeChain = require('./getPrototypeChain');
+var _getPrototypeChain = require('./_getPrototypeChain');
 
 module.exports = function (o, constructor) {
     var chain = ['Object'];
@@ -7,7 +7,7 @@ module.exports = function (o, constructor) {
     } else if (typeof o === "number") {
         chain.unshift('Number');
     } else {
-        chain = getPrototypeChain(o);
+        chain = _getPrototypeChain(o);
     }
     var match = constructor;
     if (typeof constructor === 'function') {

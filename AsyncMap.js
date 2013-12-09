@@ -1,6 +1,6 @@
 var util = require('util');
 var hide = require('./hide');
-var instanceOf = require('./instanceOf');
+var instanceOf = require('./_instanceOf');
 var Promise = require('promise');
 
 module.exports = AsyncMap;
@@ -10,13 +10,22 @@ function AsyncMap() {
     hide(this, '_list', []);
 }
 
+AsyncMap.prototype.has = function (key) {
+    return this._indexMap.hasOwnProperty(key);
+};
+
 AsyncMap.prototype.get = function (key) {
     return this._list[this._indexMap[key]];
 };
 
 AsyncMap.prototype.set = function (key, value) {
-    var len = this._list.push(value);
-    this._indexMap[key] = len - 1;
+    if (this.has(key)) {
+        this._list[this._indexMap[key]] = value;
+    } else {
+        var len = this._list.push(value);
+        this._indexMap[key] = len - 1;
+    }
+    return value;
 };
 
 // FIXME: auto generate these

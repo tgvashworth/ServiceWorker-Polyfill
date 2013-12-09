@@ -1,5 +1,5 @@
 var _Requester = require('./_Requester');
-var _instanceOf = require('./instanceOf');
+var _instanceOf = require('./_instanceOf');
 var Request = require('./Request');
 var _ProxyRequest = require('./_ProxyRequest');
 

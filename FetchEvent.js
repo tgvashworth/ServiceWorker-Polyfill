@@ -1,6 +1,6 @@
 var util = require('util');
 var hide = require('./hide');
-var _instanceOf = require('./instanceOf');
+var _instanceOf = require('./_instanceOf');
 var Event = require('./Event');
 var Response = require('./Response');
 var SameOriginResponse = require('./SameOriginResponse');

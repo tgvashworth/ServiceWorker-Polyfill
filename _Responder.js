@@ -34,6 +34,8 @@ _Responder.prototype.respond = function (response) {
         this.response.write(body);
     }
     this.response.end();
+
+    return response;
 };
 
 _Responder.prototype.respondWithNetwork = function () {
