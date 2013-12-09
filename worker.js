@@ -20,6 +20,6 @@ this.addEventListener('fetch', function (event) {
     }
     // Try to grab the thing from the cache
     event.respondWith(
-        caches.match(event.request.url)
+        fetch(event.request.url)
     );
 });

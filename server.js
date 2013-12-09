@@ -7,8 +7,13 @@ var _ProxyRequest = require('./_ProxyRequest');
 
 // DOM APIs
 var ServiceWorker = require('./ServiceWorker');
+
+var AsyncMap = require('./AsyncMap');
 var CacheList = require('./CacheList');
+var CacheItemList = require('./CacheItemList');
 var Cache = require('./Cache');
+
+var fetch = require('./fetch');
 
 var Response = require('./Response');
 var SameOriginResponse = require('./SameOriginResponse');
@@ -22,18 +27,20 @@ var FetchEvent = require('./FetchEvent');
 var workerFile = fs.readFileSync(process.argv[3], { encoding: 'utf-8' });
 var worker = new ServiceWorker();
 var workerFn = new Function(
-    'CacheList', 'Cache',
+    'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
     'Event', 'InstallEvent', 'FetchEvent',
     'Response', 'SameOriginResponse',
     'Request',
+    'fetch',
     workerFile
 );
 workerFn.call(
     worker,
-    CacheList, Cache,
+    AsyncMap, CacheList, CacheItemList, Cache,
     Event, InstallEvent, FetchEvent,
     Response, SameOriginResponse,
-    Request
+    Request,
+    fetch
 );
 
 // Install it

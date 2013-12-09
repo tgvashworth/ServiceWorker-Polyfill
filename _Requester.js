@@ -17,9 +17,7 @@ function _Requester(request) {
     } else {
         promise = this.fileSystemRequest(request);
     }
-    return promise.then(function (response) {
-        return response;
-    }, function (why) {
+    return promise.then(null, function (why) {
         throw why;
     });
 }

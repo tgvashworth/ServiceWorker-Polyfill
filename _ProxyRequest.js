@@ -12,7 +12,6 @@ function _ProxyRequest(request) {
     if (parsedUrl.query.url) {
         parsedTarget = urlLib.parse(parsedUrl.query.url, true);
     }
-    console.log('parsedTarget', parsedTarget);
     Request.call(this, {
         url: urlLib.format(parsedTarget),
         method: request.method,
