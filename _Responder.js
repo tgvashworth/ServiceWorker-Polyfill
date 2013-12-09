@@ -10,6 +10,7 @@ module.exports = _Responder;
 function _Responder(request, response) {
     this.request = request;
     this.response = response;
+    this.requestType = (request.headers['accept'].match(/^text\/html/i) ? 'navigate' : 'fetch');
 }
 
 _Responder.prototype.respond = function (response) {

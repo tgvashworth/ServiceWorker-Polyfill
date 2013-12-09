@@ -8,7 +8,11 @@ module.exports = _ProxyRequest;
 
 function _ProxyRequest(request) {
     var parsedUrl = urlLib.parse(request.url, true);
-    var parsedTarget = urlLib.parse(parsedUrl.query.url, true);
+    var parsedTarget = parsedUrl;
+    if (parsedUrl.query.url) {
+        parsedTarget = urlLib.parse(parsedUrl.query.url, true);
+    }
+    console.log('parsedTarget', parsedTarget);
     Request.call(this, {
         url: urlLib.format(parsedTarget),
         method: request.method,

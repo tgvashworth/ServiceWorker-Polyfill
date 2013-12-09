@@ -1,3 +1,5 @@
+var hide = require('./hide');
+
 module.exports = Event;
 
 function Event(type) {
@@ -5,6 +7,7 @@ function Event(type) {
         throw new TypeError('Failed to construct \'Event\': An event name must be provided.');
     }
 
+    hide(this, '_type', type);
     this.type = type;
     this.timeStamp = Date.now();
     this.propagationStopped = false;

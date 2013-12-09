@@ -1,6 +1,6 @@
 var util = require('util');
 var hide = require('./hide');
-var instanceOf = require('./instanceOf');
+var _instanceOf = require('./instanceOf');
 var Event = require('./Event');
 var Response = require('./Response');
 var SameOriginResponse = require('./SameOriginResponse');
@@ -9,21 +9,26 @@ util.inherits(FetchEvent, Event);
 
 module.exports = FetchEvent;
 
-function FetchEvent(request, responder) {
+function FetchEvent(request, _responder) {
     Event.call(this, 'fetch');
-    hide(this, '_responder', responder);
+    hide(this, '_responder', _responder);
     this.request = request;
+    this.type = _responder.requestType;
+    this.isTopLevel = false;
+    if (this.type === "navigate") {
+        this.isTopLevel = true;
+    }
 }
 
 FetchEvent.prototype.respondWith = function (response) {
-    if (!instanceOf(response, Response) && !instanceOf(response, Promise)) {
+    if (!_instanceOf(response, Response) && !_instanceOf(response, Promise)) {
         throw new TypeError('respondWith requires a Reponse or a Promise');
     }
 
     this.stopImmediatePropagation();
 
     var responsePromise = response;
-    if (instanceOf(response, Response)) {
+    if (_instanceOf(response, Response)) {
         responsePromise = new Promise(function (resolve, respond) {
             resolve(response);
         });

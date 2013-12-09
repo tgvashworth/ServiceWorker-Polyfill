@@ -1,49 +1,25 @@
-this.version = 2;
+this.version = 3;
 
 var caches = this.caches;
 this.addEventListener('install', function (e) {
-    console.log('== install ========================');
     e.services = ['fetch'];
-
-    // Create a new cache and register it with the name 'app-1'
-    // These resources are immediately cached
-    var cache = new Cache('app.2.css');
-    caches.set('app-2', cache);
-
-    // console.log('== foreaching ========================');
-    // caches.forEach(console.log.bind(console));
-    // console.log('== done ========================');
-    // console.log('caches.keys', caches.keys);
-    // console.log('caches.values', caches.values);
-    // console.log('caches.size', caches.size);
-
-    // Delay registration until the cache(s) are filled
-    caches.ready().then(function () {
-      console.log('Caches ready!');
-    }, function (why) {
-      console.log('Caching failed', why);
-    });
-
+    var cache = new Cache('assets/shell.3.html', 'assets/app.3.js', 'assets/app.3.css');
+    caches.set('app-3', cache);
     e.waitUntil(caches.ready()).then(function () {
-        console.log('caches.items', caches.items);
-        console.log('== install done ========================');
-    }, function (why) {
-        console.log('== install failed ========================');
-        console.log(why);
+        console.log('ServiceWorker ready.');
     });
 });
 
-this.addEventListener('fetch', function (e) {
-    console.log(e.request.method, e.request.url, e.request.headers);
+this.addEventListener('fetch', function (event) {
+    // Redirect all navigations to the shell page, which can figure out the route
+    if (event.type === 'navigate' && event.isTopLevel) {
+        console.log('navigation event!');
+        return event.respondWith(
+            caches.match('assets/shell.3.html')
+        );
+    }
     // Try to grab the thing from the cache
-    e.respondWith(
-        caches.match(e.request.url)
+    event.respondWith(
+        caches.match(event.request.url)
     );
-    // e.respondWith(new SameOriginResponse({
-    //   statusCode: 200,
-    //   headers: {
-    //       'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({ name: 'jack' })
-  // }));
 });

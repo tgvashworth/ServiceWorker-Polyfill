@@ -23,8 +23,8 @@ ServiceWorker.prototype.removeEventListener = function (type, listener) {
 };
 
 ServiceWorker.prototype.dispatchEvent = function (event) {
-    this._eventListeners[event.type] || (this._eventListeners[event.type] = []);
-    this._eventListeners[event.type].some(function (listener) {
+    this._eventListeners[event._type] || (this._eventListeners[event._type] = []);
+    this._eventListeners[event._type].some(function (listener) {
         listener.call(this, event);
         return (!event.propagationStopped && !event.immediatePropagationStopped);
     }.bind(this));
