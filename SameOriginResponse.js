@@ -1,5 +1,5 @@
 var util = require('util');
-var hide = require('./hide');
+var hide = require('./_hide');
 var Response = require('./Response');
 var Promise = require('promise');
 util.inherits(SameOriginResponse, Response);

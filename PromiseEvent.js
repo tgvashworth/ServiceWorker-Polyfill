@@ -1,7 +1,7 @@
 var util = require('util');
 var Promise = require('promise');
 var Event = require('./Event');
-var hide = require('./hide');
+var hide = require('./_hide');
 
 util.inherits(PromiseEvent, Event);
 module.exports = PromiseEvent;

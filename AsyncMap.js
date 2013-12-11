@@ -1,5 +1,5 @@
 var util = require('util');
-var hide = require('./hide');
+var hide = require('./_hide');
 var instanceOf = require('./_instanceOf');
 var Promise = require('promise');
 

@@ -1,4 +1,4 @@
-var hide = require('./hide');
+var hide = require('./_hide');
 var Promise = require('promise');
 var _PromiseFactory = require('./_PromiseFactory');
 var _instanceOf = require('./_instanceOf');

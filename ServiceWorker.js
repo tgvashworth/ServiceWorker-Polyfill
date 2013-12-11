@@ -1,4 +1,4 @@
-var hide = require('./hide');
+var hide = require('./_hide');
 var CacheList = require('./CacheList');
 
 module.exports = ServiceWorker;
