@@ -1,12 +1,14 @@
-this.version = 4;
+this.version = 10;
 
 var caches = this.caches;
 this.addEventListener('install', function (e) {
     e.services = ['fetch'];
-    var cache = new Cache('/assets/shell.3.html', '/assets/app.3.css');
+    var cache = new Cache('/assets/shell.3.html', '/assets/app.3.css', '/assets/app.3.js');
     caches.set('app', cache);
     e.waitUntil(caches.ready()).then(function () {
+        console.log();
         console.log('ServiceWorker ready.');
+        console.log();
     });
 });
 
@@ -29,3 +31,5 @@ this.addEventListener('fetch', function (event) {
         })
     );
 });
+
+this.addEventListener('activate', function (event) {});

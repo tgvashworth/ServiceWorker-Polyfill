@@ -1,12 +1,36 @@
-TODO
+# TODO
 
-- reload worker when it changes
-    - onupdated
-    - Cache#update
+x reload worker when it changes
+    x onactivate
+    x ServiceWorkers that don't handle the `oninstall` event at all (in which case they're assumed to have succeeded).
 - AsyncMap... isn't async.
 - Relative/absolute URLs
     - relative to serviceworker... but where's the worker?
-- what happens if there's a cache miss to a 404ing page?
+x what happens if there's a cache miss to a 404ing page?
+    x it 404s!
 - x-origin stuff?
 - error handling is generally inconsistent and shoddy
 - load worker from requested page!
+- replacement
+
+# Install/activate flow
+
+new worker detected
+    reload
+    not different?
+        return
+    setup (new)
+    install (new)
+    save new as next
+
+new request
+    if next is waiting
+        activate (current, next)
+            activate (next)
+            set next as current
+            then
+                resolve
+    otherwise
+        resolve
+    then
+        push request through worker

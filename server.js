@@ -2,6 +2,7 @@ var http = require('http');
 var fs = require('fs');
 var WebSocketServer = require('ws').Server;
 var urlLib = require('url');
+var chalk = require('chalk');
 
 /**
   * Internal APIs
@@ -9,11 +10,14 @@ var urlLib = require('url');
 var _Requester = require('./_Requester');
 var _Responder = require('./_Responder');
 var _ProxyRequest = require('./_ProxyRequest');
+var _PromiseFactory = require('./_PromiseFactory');
 
 /**
  * DOM APIs
  */
 var ServiceWorker = require('./ServiceWorker');
+
+var Promise = require('Promise');
 
 var AsyncMap = require('./AsyncMap');
 var CacheList = require('./CacheList');
@@ -29,9 +33,18 @@ var Request = require('./Request');
 var Event = require('./Event');
 var InstallEvent = require('./InstallEvent');
 var FetchEvent = require('./FetchEvent');
+var ActivateEvent = require('./ActivateEvent');
+
+var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, method) {
+    memo[method] = console[method];
+    if (typeof console[method] === "function") {
+        memo[method] = memo[method].bind(console, 'sw:');
+    }
+    return memo;
+}, {});
 
 /**
- * GO GO GO
+ * Config
  */
 
 // Setup the _Requester with our config
@@ -41,69 +54,181 @@ _Requester.origin = origin;
 _Requester.host = urlLib.parse(networkBase).host;
 _Requester.networkBase = networkBase;
 
-// Create worker
-var workerFile = fs.readFileSync(process.argv[5], { encoding: 'utf-8' });
-var worker = new ServiceWorker();
-var workerFn = new Function(
-    'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
-    'Event', 'InstallEvent', 'FetchEvent',
-    'Response', 'SameOriginResponse',
-    'Request',
-    'fetch',
-    workerFile
-);
-workerFn.call(
-    worker,
-    AsyncMap, CacheList, CacheItemList, Cache,
-    Event, InstallEvent, FetchEvent,
-    Response, SameOriginResponse,
-    Request,
-    fetch
-);
+/**
+ * Worker creation & install
+ */
 
-// Install it
-var installEvent = new InstallEvent();
-// FIXME: janky. worker.ready()?
-installEvent._install().then(function () {
-    worker._isInstalled = true;
+var currentWorkerData = { worker: null, content: '', isNew: false, isUpgrade: false };
+var newWorkerData = {
+    isWaiting: false,
+    installPromise: _PromiseFactory.ResolvedPromise()
+};
+
+function reloadWorker() {
+    var newWorkerFile = readWorker();
+    if (newWorkerFile === currentWorkerData.content) {
+        return console.log(chalk.blue('Identical workers.'));
+    }
+
+    try {
+        var newWorkerData = setupWorker(newWorkerFile);
+    } catch (e) {
+        console.error(chalk.red('Loading worker failed.'));
+        console.error(e.stack);
+        return;
+    }
+    newWorkerData.isWaiting = true;
+    // FIXME: this should timeout
+    newWorkerData.installPromise = installWorker(newWorkerData);
+    nextWorkerData = newWorkerData;
+}
+
+function setupWorker(workerFile) {
+    var worker = new ServiceWorker();
+    var workerFn = new Function(
+        'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
+        'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent',
+        'Response', 'SameOriginResponse',
+        'Request',
+        'fetch',
+        'Promise',
+        'console', // teehee
+        workerFile
+    );
+    workerFn.call(
+        worker,
+        AsyncMap, CacheList, CacheItemList, Cache,
+        Event, InstallEvent, ActivateEvent, FetchEvent,
+        Response, SameOriginResponse,
+        Request,
+        fetch,
+        Promise,
+        fakeConsole
+    );
+    return {
+        worker: worker,
+        content: workerFile
+    };
+}
+
+// FIXME: can this fulfillment pattern be abstracted?
+//          answer: yes, make the promise inside PromiseEvent and add methods
+//          to force resolve/reject. Or something.
+function installWorker(workerData) {
+    console.log('Installing...');
+    return new Promise(function (resolve, reject) {
+        // Install it
+        var installEvent = new InstallEvent(resolve, reject);
+        workerData.worker.dispatchEvent(installEvent);
+        if (!installEvent._isStopped()) {
+            return resolve();
+        }
+    }).then(function (result) {
+        console.log(chalk.green('Installed worker version:'), chalk.yellow(workerData.worker.version));
+        workerData.isInstalled = true;
+        return result;
+    });
+}
+
+function activateWorker(workerData) {
+    console.log('Activating...');
+    return new Promise(function (resolve, reject) {
+        // Activate it
+        var activateEvent = new ActivateEvent(resolve, reject);
+        workerData.worker.dispatchEvent(activateEvent);
+        if (!activateEvent._isStopped()) {
+            return resolve();
+        }
+    }).then(function (result) {
+        workerData.isWaiting = false;
+        console.log(chalk.green('Activated worker version:'), chalk.yellow(workerData.worker.version));
+        return result;
+    });
+}
+
+/**
+ * This function (of type Function) takes no arguments. DO NOT TOUCH it is
+ * auto-generated by an AbstractProxyWorkerSwapperFactoryFactoryBean; and
+ * it utilizes advanced NodeScript ES7 methodologies.
+ */
+function swapWorkers() {
+    currentWorkerData = nextWorkerData;
+}
+
+function activateNextWorker() {
+    if (nextWorkerData.isWaiting) {
+        return activateWorker(nextWorkerData).then(swapWorkers);
+    }
+}
+
+/**
+ * Go, go, go.
+ */
+
+// Watch the worker
+fs.watch(process.argv[5], function (type) {
+    if (type !== "change") return;
+    console.log();
+    console.log();
+    console.log(chalk.blue('Worker file changed!'));
+    reloadWorker();
 });
-// INSTALL!
-worker.dispatchEvent(installEvent);
-console.log('ServiceWorker registered for %s events', installEvent.services.join(' & '));
+
+reloadWorker();
 
 // Hacky, hacky, hacky :)
 var requestIsNavigate = false;
 
 // Create the server (proxy-ish)
 var server = http.createServer(function (_request, _response) {
+    // Fuck favicons, man.
     if (_request.url.match(/favicon/)) {
         return _response.end();
     }
+
+    console.log();
+    console.log();
+
     // console.log('== REQUEST ========================================== !! ====');
     // console.log(_request.url);
     // _request.url = _request.url.replace(/^\//, '');
     // console.log('requestIsNavigate', requestIsNavigate);
     // console.log('===================================================== !! ====');
+
+    // Setup the request
     var request = new _ProxyRequest(_request);
     var _responder = new _Responder(_request, _response, requestIsNavigate);
     var fetchEvent = new FetchEvent(request, _responder);
     requestIsNavigate = false;
-    if (worker._isInstalled) {
-        worker.dispatchEvent(fetchEvent);
+
+    var readyPromise = _PromiseFactory.ResolvedPromise();
+    // If this is a navigate, we can activate the next worker.
+    // This may not actually do any swapping if the worker is not waiting, having
+    // been installed and activated.
+    if (fetchEvent.type === 'navigate') {
+        readyPromise = nextWorkerData.installPromise.then(activateNextWorker);
     }
-    if (!fetchEvent.immediatePropagationStopped &&
-        !fetchEvent.propagationStopped &&
-        !fetchEvent.defaultPrevented) {
-        _responder.respondWithNetwork().then(null, function (why) {
-            console.error(why);
-        });
-    }
+
+    readyPromise.then(function () {
+        // Whatever happens above, we should now have an installed, activated worker
+        currentWorkerData.worker.dispatchEvent(fetchEvent);
+        if (!fetchEvent._isStopped()) {
+            _responder.respondWithNetwork();
+        }
+    }, function (why) {
+        console.error(chalk.red('ready error'), why);
+        return _responder.respondWithNetwork();
+    });
 }).listen(process.argv[2]);
 
-// WebSocket comes from devtools extension
+/**
+ * WebSocket comes from devtools extension.
+ * It uses beforeunload events to notify the service worker when events
+ * are navigations.
+ */
 var wss = new WebSocketServer({ server: server });
 wss.on('connection', function (ws) {
-    console.log('ws connection');
+    console.log('ws: connection');
     ws.on('message', function (message) {
         var data = JSON.parse(message);
         if (data.type === 'navigate') {
@@ -111,6 +236,14 @@ wss.on('connection', function (ws) {
         }
     });
     ws.on('close', function (message) {
-        console.log('ws close');
+        console.log('ws: close');
     });
 });
+
+/**
+ * Utils
+ */
+
+function readWorker() {
+    return fs.readFileSync(process.argv[5], { encoding: 'utf-8' });
+}
