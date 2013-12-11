@@ -1,0 +1,7 @@
+# log every request
+# response: $aurl.log()
+
+# let the serviceworker handle all demosite requests
+request: if $hostname contains 'demosite.dev', $host.set-to('localhost:5678')
+request: if $hostname contains 'demosite', $aurl.log
+

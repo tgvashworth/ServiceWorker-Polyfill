@@ -7,7 +7,11 @@
     "request": "~2.29.0",
     "promise": "~3.2.0",
     "mime": "~1.2.11",
-    "ws": "~0.4.31"
+    "ws": "~0.4.31",
+    "node-socks": "~0.1.0",
+    "stream-inspect": "0.0.2",
+    "argyle": "0.0.1",
+    "http-proxy": "~0.10.3"
   },
   "devDependencies": {},
   "scripts": {

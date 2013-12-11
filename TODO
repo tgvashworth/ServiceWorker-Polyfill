@@ -1,0 +1,12 @@
+TODO
+
+- reload worker when it changes
+    - onupdated
+    - Cache#update
+- AsyncMap... isn't async.
+- Relative/absolute URLs
+    - relative to serviceworker... but where's the worker?
+- what happens if there's a cache miss to a 404ing page?
+- x-origin stuff?
+- error handling is generally inconsistent and shoddy
+- load worker from requested page!

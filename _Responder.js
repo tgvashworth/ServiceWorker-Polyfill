@@ -40,11 +40,19 @@ _Responder.prototype.respond = function (response) {
 
 _Responder.prototype.respondWithNetwork = function () {
     return this.goToNetwork().then(
-        this.respond.bind(this)
+        this.respond.bind(this),
+        function (why) {
+            // There was a network error, but we got something back
+            // so roll with it. I'm sure this can be cleaned up.
+            // FIXME: caching this could be really bad.
+            return this.respond(new Response(why.response));
+        }.bind(this)
     );
 }
 
 _Responder.prototype.goToNetwork = function () {
     var request = new _ProxyRequest(this.request);
+    request.headers['x-sent-from-responder'] = true;
+    request.headers['x-original-url'] = request.url;
     return new ResponsePromise(request);
 };

@@ -9,48 +9,33 @@ var SameOriginResponse = require('./SameOriginResponse');
 
 module.exports = _Requester;
 
+_Requester.origin = '';
+_Requester.host = '';
+_Requester.networkBase = '';
+
 function _Requester(request) {
-    var url = urlLib.parse(request.url);
-    var promise;
-    if (url.hostname) {
-        promise = this.networkRequest(request);
-    } else {
-        promise = this.fileSystemRequest(request);
-    }
-    return promise.then(null, function (why) {
+    return this.networkRequest(request).then(null, function (why) {
         throw why;
     });
 }
 
 _Requester.prototype.networkRequest = function (request) {
     return new Promise(function (resolve, reject) {
-        _networkRequest(request, function (err, response) {
+        var networkRequest = request;
+        // Modify the request slightly for the proxy
+        networkRequest.url = urlLib.resolve(_Requester.networkBase, request.url);
+        networkRequest.headers.host = _Requester.host;
+        _networkRequest(networkRequest, function (err, rawResponse) {
             if (err) {
                 return reject(err);
             }
-            var response = new Response(response);
+            // method comes back null
+            rawResponse.method = networkRequest.method;
+            var response = new Response(rawResponse);
             if (response.statusCode >= 400) {
-                return reject(new NetworkError(response.statusCode));
+                return reject(new NetworkError(response));
             }
             resolve(response);
-        });
-    });
-};
-
-_Requester.prototype.fileSystemRequest = function (request) {
-    return new Promise(function (resolve, reject) {
-        fs.readFile(request.url, { encoding: 'utf-8' }, function (err, contents) {
-            if (err) {
-                return reject(err);
-            }
-            resolve(new SameOriginResponse({
-                statusCode: 200,
-                method: 'GET',
-                headers: {
-                    'Content-Type': mime.lookup(request.url)
-                },
-                body: contents
-            }));
         });
     });
 };

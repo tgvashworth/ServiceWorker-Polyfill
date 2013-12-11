@@ -3,6 +3,7 @@ module.exports = Request;
 function Request(params) {
     this.timeout = 0;
     this.method = "GET";
+    this.headers = {};
     if (params) {
         if (typeof params.timeout != "undefined") {
             this.timeout = params.timeout;

@@ -33,29 +33,16 @@ Cache.prototype.ready = function () {
 Cache.prototype.match = function (key) {
     if (!this._isReady) {
         console.log('cache not ready')
-        return _PromiseFactory.RejectedPromise(new CacheError('Cache is not ready.'));
+        throw new CacheError('Cache is not ready.');
     }
+    var items = this.items;
     return this.ready().then(function () {
-        console.log('ready to match!');
-        console.log('== matching ========================');
-        var match;
-        this.items.every(function (response, itemKey) {
-            console.log('itemKey :', itemKey);
-            console.log('key     :', key);
-            if (itemKey.toString() === key.toString()) {
-                console.log('=== match!!!');
-                match = response;
-                return false;
-            }
-            return true;
-        });
-        console.log('== /matching ========================');
-        console.log('match', match);
-        if (!match) {
-            throw new CacheError('Not found in cache');
+        if (items.has(key)) {
+            return items.get(key);
         }
-        return match;
-    }.bind(this));
+        console.log('cache miss', key);
+        throw new CacheError('Not found in cache.');
+    });
 };
 
 Cache.prototype.add = function (key, response) {
@@ -71,6 +58,7 @@ Cache.prototype.add = function (key, response) {
         url: key
     });
     var responsePromise = new ResponsePromise(request).then(function (response) {
+        // console.log('cache populated with', key, response);
         response.headers['X-Cache-Hit'] = true;
         response.headers['X-Cache-Key'] = key;
         this.items.set(key, response);

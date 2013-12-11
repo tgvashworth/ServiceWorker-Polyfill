@@ -37,5 +37,8 @@ FetchEvent.prototype.respondWith = function (response) {
     return responsePromise.then(
         this._responder.respond.bind(this._responder),
         this._responder.respondWithNetwork.bind(this._responder)
-    );
+    ).then(null, function (why) {
+        console.error('_responder error', why);
+        throw why;
+    })
 };
