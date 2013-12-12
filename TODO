@@ -1,14 +1,12 @@
 # TODO
 
-- go to network, then go to cache
 - forwardTo
-- Cache should store promises for SameOriginResponses
-    - does it already?!
 - CrossOriginResponse
 - AsyncMap... isn't async.
 - Relative/absolute URLs
     - relative to serviceworker... but where's the worker?
 - x-origin stuff?
+- URL type
 - load worker from requested page!
 - replacement
 
@@ -16,6 +14,7 @@
 
 - No HTTPS
 - error handling is generally inconsistent and shoddy
+- can go to network twice
 
 # Install/activate flow
 
