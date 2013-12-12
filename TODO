@@ -1,17 +1,21 @@
 # TODO
 
-x reload worker when it changes
-    x onactivate
-    x ServiceWorkers that don't handle the `oninstall` event at all (in which case they're assumed to have succeeded).
+- go to network, then go to cache
+- forwardTo
+- Cache should store promises for SameOriginResponses
+    - does it already?!
+- CrossOriginResponse
 - AsyncMap... isn't async.
 - Relative/absolute URLs
     - relative to serviceworker... but where's the worker?
-x what happens if there's a cache miss to a 404ing page?
-    x it 404s!
 - x-origin stuff?
-- error handling is generally inconsistent and shoddy
 - load worker from requested page!
 - replacement
+
+# Issues
+
+- No HTTPS
+- error handling is generally inconsistent and shoddy
 
 # Install/activate flow
 

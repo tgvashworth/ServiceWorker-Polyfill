@@ -1,4 +1,4 @@
-this.version = 10;
+this.version = 11;
 
 var caches = this.caches;
 this.addEventListener('install', function (e) {
@@ -22,12 +22,18 @@ this.addEventListener('fetch', function (event) {
     }
     // Try to grab the thing from the cache
     event.respondWith(
-        caches.match(event.request.url).then(function (response) {
-            console.log('cache hit', event.request.url, response);
+        fetch(event.request.url).then(function (response) {
+            console.log('fetched', response.url);
             return response;
         }, function (why) {
-            console.log('cache miss', event.request.url);
-            throw why;
+            console.log('fetch failed', event.request.url, why);
+            return caches.match(event.request.url).then(function (response) {
+                console.log('cache hit', event.request.url, response);
+                return response;
+            }, function (why) {
+                console.log('cache miss', event.request.url);
+                throw why;
+            })
         })
     );
 });

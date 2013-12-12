@@ -39,6 +39,7 @@ FetchEvent.prototype.respondWith = function (response) {
         this._responder.respondWithNetwork.bind(this._responder)
     ).then(null, function (why) {
         console.error('_responder error', why);
+        console.error(why.stack);
         throw why;
     })
 };

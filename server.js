@@ -189,10 +189,10 @@ var server = http.createServer(function (_request, _response) {
     console.log();
     console.log();
 
-    // console.log('== REQUEST ========================================== !! ====');
-    // console.log(_request.url);
+    console.log('== REQUEST ========================================== !! ====');
+    console.log(_request.url);
     // _request.url = _request.url.replace(/^\//, '');
-    // console.log('requestIsNavigate', requestIsNavigate);
+    console.log('requestIsNavigate', requestIsNavigate);
     // console.log('===================================================== !! ====');
 
     // Setup the request

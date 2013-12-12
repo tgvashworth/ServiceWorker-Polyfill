@@ -14,7 +14,7 @@ function _Responder(request, response, requestIsNavigate) {
 }
 
 _Responder.prototype.respond = function (response) {
-    var headers = response.headers;
+    var headers = response.headers || {};
     var body = response.body;
     if (typeof body !== 'undefined') {
         headers['Content-Length'] = Buffer.byteLength(body);
@@ -31,7 +31,7 @@ _Responder.prototype.respond = function (response) {
 
     this.response.writeHead.apply(this.response, headArgs);
     if (typeof body !== 'undefined') {
-        this.response.write(body);
+        this.response.write(body.toString());
     }
     this.response.end();
 

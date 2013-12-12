@@ -14,9 +14,7 @@ _Requester.host = '';
 _Requester.networkBase = '';
 
 function _Requester(request) {
-    return this.networkRequest(request).then(null, function (why) {
-        throw why;
-    });
+    return this.networkRequest(request);
 }
 
 _Requester.prototype.networkRequest = function (request) {
@@ -27,7 +25,11 @@ _Requester.prototype.networkRequest = function (request) {
         networkRequest.headers.host = _Requester.host;
         _networkRequest(networkRequest, function (err, rawResponse) {
             if (err) {
-                return reject(err);
+                return reject(new NetworkError(new Response({
+                    statusCode: 404,
+                    statusText: 'Network failure: ' + err.code,
+                    method: networkRequest.method
+                })));
             }
             // method comes back null
             rawResponse.method = networkRequest.method;

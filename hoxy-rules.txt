@@ -2,6 +2,7 @@
 # response: $aurl.log()
 
 # let the serviceworker handle all demosite requests
+# request: $host.log $aurl.log
+# request: if $host eq 'demosite-origin.dev', $host.log $aurl.log @send-404()
 request: if $hostname contains 'demosite.dev', $host.set-to('localhost:5678')
-request: if $hostname contains 'demosite', $aurl.log
 
