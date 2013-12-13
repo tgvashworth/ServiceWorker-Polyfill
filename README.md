@@ -16,6 +16,16 @@ You'll need to be able host a local server and give it a different hostname than
 
 I built [`distra`](https://github.com/phuu/distra) which can do this, but there are other ways. You could also use a remote server (I think, not tried).
 
+### Architecture
+
+Here's the general idea.
+
+1. Page requests something from *local origin*
+2. Proxy redirects to ServiceWorker server
+3. ServiceWorker worker which generates response
+4. ServiceWorker might go to the *network origin*, pretending do the *local origin*
+5. ServiceWorker server returns response to page
+
 ### Starting it up
 
 1. Start the *network host server*. You should be able to access it as you would any other website.
@@ -33,6 +43,9 @@ You can now add to the `worker.js` to play with the API. Lots of stuff it missin
 
 - This stuff doesn't play nice with VPNs.
 - If something's not working, try adding logging to hoxy/your proxy. You might be in a redirect loop, or not forwarding to the right place.
+- No HTTPS
+- Error handling is generally inconsistent and shoddy :)
+- Can go to network twice – this is a misunderstanding of the spec. e.respondWith should no go to the network if the passed promise is rejected.
 
 ## Contributing
 
