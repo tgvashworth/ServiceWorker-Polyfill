@@ -1,6 +1,6 @@
 # ServiceWorker demo
 
-This is a (partial) [ServiceWorker](https://github.com/slightlyoff/ServiceWorker) implementation, written in JavaScript. The idea is to enable exploration the ServiceWorker API and the implications it has for users, applications and developer workflow.
+This is a (partial) [ServiceWorker](https://github.com/slightlyoff/ServiceWorker) implementation, written in JavaScript. The idea is to enable exploration of the ServiceWorker API and the implications it has for users, applications and developer workflow.
 
 ## Setup
 
@@ -12,9 +12,9 @@ It's a bit complicated.
 - hoxy (`npm install -g hoxy`) (or another http proxy that can modify requests based on hostname)
 - Possibly OSX – I haven't tried on other platforms
 
-You'll need to be able host a local server and give it a different hostname - this will be your *network host*. I'd reccommend `something-origin.dev`, so you can use `something.dev` to hit the service worker. This second host is your *local host*.
+You'll need to be able host a local server and give it a different hostname than `localhost` - this will be your *network host*. I'd recommend `something-origin.dev`. You'll use use `something.dev` (so, no `-origin` bit) to hit the service worker. This second host is your *local host*.
 
-I built [`distra`](https://github.com/phuu/distra) for doing this, but there are other ways. You could also use a remote server (I think, not tried).
+I built [`distra`](https://github.com/phuu/distra) which can do this, but there are other ways. You could also use a remote server (I think, not tried).
 
 ### Starting it up
 
