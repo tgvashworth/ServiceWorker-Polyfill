@@ -19,7 +19,7 @@ I built [`distra`](https://github.com/phuu/distra) for doing this, but there are
 ### Starting it up
 
 1. Start the *network host server*. You should be able to access it as you would any other website.
-2. Edit the [`hoxy-rules.txt`](hoxy-rules.txt) file to match your *local host*.
+2. Edit the [`hoxy-rules.txt`](hoxy-rules.txt) file to match your *local host*. The idea is the the proxy rewrites requests to the *local origin* to go to the ServiceWorker, which can then make requests to the *network origin*, but pretend it's the *local origin*. Sneaky!
 3. Start `hoxy` (or your proxy) in the project's directory. It will read the `hoxy-rules.txt` file.
 4. Configure your machine/browser's HTTP proxy settings to go through the proxy. By default with `hoxy`, this will be `localhost:8080`.
 5. Start the SevicerWorker server. Run `node --harmony server.js 5678 http://your.local.origin/ http://your.network.origin/ worker.js`.
