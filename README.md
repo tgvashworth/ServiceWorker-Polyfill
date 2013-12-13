@@ -1,6 +1,6 @@
 # ServiceWorker demo
 
-This is a (partial) [ServiceWorker](https://github.com/slightlyoff/ServiceWorker) implementation, written in JavaScript. The idea is to let developers play with the ServiceWorker API and the implications it has for their users, applications and workflow.
+This is a (partial) [ServiceWorker](https://github.com/slightlyoff/ServiceWorker) implementation, written in JavaScript. The idea is to enable exploration the ServiceWorker API and the implications it has for users, applications and developer workflow.
 
 ## Setup
 
@@ -12,7 +12,7 @@ It's a bit complicated.
 - hoxy (`npm install -g hoxy`) (or another http proxy that can modify requests based on hostname)
 - Possibly OSX – I haven't tried on other platforms
 
-You'll need to be able host a local server and give it a different hostname - this will be your *network host*. I'd reccommend `something-origin.dev`, so you can use `something.dev` to hit the service worker. This second host is you *local host*.
+You'll need to be able host a local server and give it a different hostname - this will be your *network host*. I'd reccommend `something-origin.dev`, so you can use `something.dev` to hit the service worker. This second host is your *local host*.
 
 I built [`distra`](https://github.com/phuu/distra) for doing this, but there are other ways. You could also use a remote server (I think, not tried).
 
@@ -29,8 +29,13 @@ You should now be able to visit the local origin and have it proxy through to th
 
 You can now add to the `worker.js` to play with the API. Lots of stuff it missing, but the core request interception, caching and response APIs are there.
 
+### Notes
+
+- This stuff doesn't play nice with VPNs.
+- If something's not working, try adding logging to hoxy/your proxy. You might be in a redirect loop, or not forwarding to the right place.
+
 ## Contributing
 
-The TODO files contains what need to be done. I'll be submitted this as issues too.
+The TODO files contains what need to be done. I'll be submitted this as issues too. Please do add your own issues or submit PRs!
 
 If you're adding a "class" not from the spec, please prefix it with an underscore.
