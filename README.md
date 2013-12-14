@@ -23,7 +23,7 @@ Here's the general idea.
 1. Page requests something from *local origin*
 2. Proxy redirects to ServiceWorker server
 3. ServiceWorker worker which generates response
-4. ServiceWorker might go to the *network origin*, pretending to be the *local origin*
+4. ServiceWorker might go to the *network origin*, pretending to be the page
 5. ServiceWorker server returns response to page
 
 ### Starting it up
