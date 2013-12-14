@@ -2,12 +2,12 @@
 
 - forwardTo
 - CrossOriginResponse
+    - x-origin stuff?
+    - Pick up all requests, not just same-domain
 - postMessage
-- Pick up all requests, not just same-domain
 - AsyncMap... isn't async. Should return promises.
 - Relative/absolute URLs
     - relative to serviceworker... but where's the worker?
-- x-origin stuff?
 - URL type
 - load worker from requested page!
 - replacement
