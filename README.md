@@ -9,7 +9,7 @@ It's a bit complicated.
 ### Requirements
 
 - Node + npm
-- hoxy (`npm install -g hoxy`) (or another http proxy that can modify requests based on hostname)
+- a proxy capable of modifying requests based on hostname, like [Charles](http://www.charlesproxy.com/) or hoxy – `npm install -g hoxy`)
 - Possibly OSX – I haven't tried on other platforms
 
 You'll need to be able host a local server and give it a different hostname than `localhost` - this will be your *network host*. I'd recommend `something-origin.dev`. You'll use use `something.dev` (so, no `-origin` bit) to hit the service worker. This second host is your *local host*.
@@ -29,8 +29,8 @@ Here's the general idea.
 ### Starting it up
 
 1. Start the *network host server*. You should be able to access it as you would any other website.
-2. Edit the [`hoxy-rules.txt`](hoxy-rules.txt) file to match your *local host*. The idea is the the proxy rewrites requests to the *local origin* to go to the ServiceWorker, which can then make requests to the *network origin*, but pretend it's the *local origin*. Sneaky!
-3. Start `hoxy` (or your proxy) in the project's directory. It will read the `hoxy-rules.txt` file.
+2. Edit your proxy's setup to rewrite requests to the *local origin* to go to the ServiceWorker (`localhost:6789` for example), which can then make requests to the *network origin*, but pretend it's the *local origin*. In Charles, use a Rewrite (Tools > Rewrite) that modifies the Host. If you're using hoxy, there's some setup in [`hoxy-rules.txt`](hoxy-rules.txt).
+3. If you're using hoxy, start it in the project's directory. It will read the `hoxy-rules.txt` file.
 4. Configure your machine/browser's HTTP proxy settings to go through the proxy. By default with `hoxy`, this will be `localhost:8080`.
 5. Start the SevicerWorker server. Run `node --harmony server.js 5678 http://your.local.origin/ http://your.network.origin/ worker.js`.
 6. Install the unpacked Chrome extension from the devtools folder of this project. You *must* have devtools open when testing this stuff; the devtools extension connects to the ServiceWorker server via WebSocket to inform it when a navigation is occuring.
