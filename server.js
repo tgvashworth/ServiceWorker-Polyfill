@@ -212,6 +212,7 @@ var server = http.createServer(function (_request, _response) {
     readyPromise.then(function () {
         // Whatever happens above, we should now have an installed, activated worker
         currentWorkerData.worker.dispatchEvent(fetchEvent);
+        // If the worker has not called respondWith, we should go to network.
         if (!fetchEvent._isStopped()) {
             _responder.respondWithNetwork();
         }
