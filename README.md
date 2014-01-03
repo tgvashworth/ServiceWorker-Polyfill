@@ -26,6 +26,10 @@ Here's the general idea.
 4. ServiceWorker might go to the *network origin*, pretending to be the page
 5. ServiceWorker server returns response to page
 
+Here's an image that might help. It might not.
+
+![meh](http://i.phuu.net/TBLw/Screen%20Shot%202014-01-03%20at%2015.30.35.png)
+
 ### Starting it up
 
 1. Start the *network origin server*. You should be able to access it as you would any other website.
