@@ -1,4 +1,5 @@
-# log every response
+# log every request/response
+# request: $aurl.log()
 # response: $aurl.log()
 
 # let the serviceworker handle all demosite requests
