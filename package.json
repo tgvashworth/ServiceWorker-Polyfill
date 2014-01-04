@@ -12,7 +12,8 @@
     "stream-inspect": "0.0.2",
     "argyle": "0.0.1",
     "http-proxy": "~0.10.3",
-    "chalk": "~0.3.0"
+    "chalk": "~0.3.0",
+    "hide-key": "0.0.1"
   },
   "devDependencies": {},
   "scripts": {

@@ -1,4 +1,4 @@
-var hide = require('./_hide');
+var hide = require('hide-key');
 
 module.exports = Event;
 

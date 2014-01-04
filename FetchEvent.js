@@ -1,5 +1,5 @@
 var util = require('util');
-var hide = require('./_hide');
+var hide = require('hide-key');
 var _instanceOf = require('./_instanceOf');
 var Event = require('./Event');
 var Response = require('./Response');
