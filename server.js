@@ -34,6 +34,7 @@ var Event = require('./Event');
 var InstallEvent = require('./InstallEvent');
 var FetchEvent = require('./FetchEvent');
 var ActivateEvent = require('./ActivateEvent');
+var MessageEvent = require('./MessageEvent');
 
 var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, method) {
     memo[method] = console[method];
@@ -58,7 +59,13 @@ _Requester.networkBase = networkBase;
  * Worker creation & install
  */
 
-var currentWorkerData = { worker: null, content: '', isNew: false, isUpgrade: false };
+var currentWorkerData = {
+    worker: null,
+    content: '',
+    isNew: false,
+    isUpgrade: false
+};
+
 var newWorkerData = {
     isWaiting: false,
     installPromise: _PromiseFactory.ResolvedPromise()
@@ -87,7 +94,7 @@ function setupWorker(workerFile) {
     var worker = new ServiceWorker();
     var workerFn = new Function(
         'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
-        'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent',
+        'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent', 'MessageEvent',
         'Response', 'SameOriginResponse',
         'Request',
         'fetch',
@@ -98,7 +105,7 @@ function setupWorker(workerFile) {
     workerFn.call(
         worker,
         AsyncMap, CacheList, CacheItemList, Cache,
-        Event, InstallEvent, ActivateEvent, FetchEvent,
+        Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
         Response, SameOriginResponse,
         Request,
         fetch,
@@ -152,12 +159,13 @@ function activateWorker(workerData) {
  * it utilizes advanced NodeScript ES7 methodologies.
  */
 function swapWorkers() {
-    currentWorkerData = nextWorkerData;
+    return (currentWorkerData = nextWorkerData);
 }
 
 function activateNextWorker() {
     if (nextWorkerData.isWaiting) {
-        return activateWorker(nextWorkerData).then(swapWorkers);
+        nextWorkerData.activatePromise = activateWorker(nextWorkerData);
+        return nextWorkerData.activatePromise.then(swapWorkers);
     }
 }
 
@@ -220,7 +228,9 @@ var server = http.createServer(function (_request, _response) {
         console.error(chalk.red('ready error'), why);
         return _responder.respondWithNetwork();
     });
-}).listen(process.argv[2]);
+}).listen(process.argv[2], function () {
+    console.log('ServiceWorker server up at http://%s:%d', this.address().address, this.address().port);
+});
 
 /**
  * WebSocket comes from devtools extension.
@@ -233,7 +243,18 @@ wss.on('connection', function (ws) {
     ws.on('message', function (message) {
         var data = JSON.parse(message);
         if (data.type === 'navigate') {
-            requestIsNavigate = true;
+            return requestIsNavigate = true;
+        }
+        if (data.type === 'postMessage') {
+            console.log('postMessage', data);
+            // TODO fire MessageEvent?
+            // TODO what happens if we try to postMessage a non-setup worker?
+            var messageEvent = new MessageEvent(data.data);
+            // We can only message an activated worker
+            if (!currentWorkerData.activatePromise) return;
+            currentWorkerData.activatePromise.then(function () {
+                currentWorkerData.worker.dispatchEvent(messageEvent);
+            });
         }
     });
     ws.on('close', function (message) {
