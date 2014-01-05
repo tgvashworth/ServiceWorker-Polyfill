@@ -12,7 +12,9 @@ function addServiceWorker(window) {
     }
 
     // Don't inject twice
-    if (navigator._serviceWorker) return console.log('Already injected');
+    if (navigator._serviceWorker) {
+        return console.log('Already injected. Reload the page.');
+    }
     Object.defineProperty(navigator, '_serviceWorker', {
         value: true
     });
@@ -42,8 +44,17 @@ function addServiceWorker(window) {
         ws.addEventListener('open', function () {
             tryReconnect = true;
         });
-        ws.addEventListener('message', function () {
+        ws.addEventListener('message', function (event) {
             console.log.apply(console, ['ws:'].concat(arguments));
+            var data = JSON.parse(event.data);
+            if (data.type === "postMessage") {
+                // TODO this even needs an origin.
+                // https://developer.mozilla.org/en-US/docs/Web/API/MessageEvent
+                var newEvent = new Event('message');
+                newEvent.data = data.data;
+                window.dispatchEvent(newEvent);
+                return;
+            }
         });
         ws.addEventListener('close', function () {
             ws = null;

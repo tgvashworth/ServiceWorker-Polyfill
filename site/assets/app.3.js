@@ -7,3 +7,7 @@ window.addEventListener('load', function () {
         hello: 'world'
     });
 });
+
+window.addEventListener('message', function (event) {
+    console.log('message', event.data);
+});

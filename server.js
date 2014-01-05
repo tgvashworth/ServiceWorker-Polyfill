@@ -11,6 +11,9 @@ var _Requester = require('./_Requester');
 var _Responder = require('./_Responder');
 var _ProxyRequest = require('./_ProxyRequest');
 var _PromiseFactory = require('./_PromiseFactory');
+// Messenger is a singleton given to all ServiceWorkers for to postMessage it up.
+var _Messenger = require('./_Messenger');
+var _messenger = new _Messenger();
 
 /**
  * DOM APIs
@@ -91,7 +94,7 @@ function reloadWorker() {
 }
 
 function setupWorker(workerFile) {
-    var worker = new ServiceWorker();
+    var worker = new ServiceWorker(_messenger);
     var workerFn = new Function(
         'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
         'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent', 'MessageEvent',
@@ -139,18 +142,19 @@ function installWorker(workerData) {
 
 function activateWorker(workerData) {
     console.log('Activating...');
-    return new Promise(function (resolve, reject) {
+    var activatePromise = new Promise(function (resolve, reject) {
         // Activate it
         var activateEvent = new ActivateEvent(resolve, reject);
         workerData.worker.dispatchEvent(activateEvent);
         if (!activateEvent._isStopped()) {
             return resolve();
         }
-    }).then(function (result) {
+    });
+    activatePromise.then(function (result) {
         workerData.isWaiting = false;
         console.log(chalk.green('Activated worker version:'), chalk.yellow(workerData.worker.version));
-        return result;
     });
+    return activatePromise;
 }
 
 /**
@@ -238,17 +242,19 @@ var server = http.createServer(function (_request, _response) {
  * are navigations.
  */
 var wss = new WebSocketServer({ server: server });
+// TODO only accept one connection per page
 wss.on('connection', function (ws) {
     console.log('ws: connection');
+    // Inform the _messenger of the new socket.
+    _messenger.add(ws);
+    // Listen up!
     ws.on('message', function (message) {
         var data = JSON.parse(message);
         if (data.type === 'navigate') {
             return requestIsNavigate = true;
         }
         if (data.type === 'postMessage') {
-            console.log('postMessage', data);
-            // TODO fire MessageEvent?
-            // TODO what happens if we try to postMessage a non-setup worker?
+            console.log('postMessage in:', data);
             var messageEvent = new MessageEvent(data.data);
             // We can only message an activated worker
             if (!currentWorkerData.activatePromise) return;
@@ -259,6 +265,7 @@ wss.on('connection', function (ws) {
     });
     ws.on('close', function (message) {
         console.log('ws: close');
+        _messenger.remove(ws);
     });
 });
 
