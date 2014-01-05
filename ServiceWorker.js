@@ -8,7 +8,6 @@ function ServiceWorker(_messenger) {
     hide(this, '_messenger', _messenger);
     this.version = 0;
     this.caches = new CacheList();
-    this._isInstalled = false;
 }
 
 /**
