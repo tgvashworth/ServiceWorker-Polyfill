@@ -43,6 +43,32 @@ You should now be able to visit the local origin and have it proxy through to th
 
 You can now add to the `worker.js` to play with the API. Lots of stuff it missing, but the core request interception, caching and response APIs are there.
 
+### Worker activation flow
+
+In case you're interested. This might not quite be accurate; it's here as a mental note.
+
+```
+new worker detected
+    reload
+    not different?
+        return
+    setup (new)
+    install (new)
+    save new as next
+
+new request
+    if next is waiting
+        activate (current, next)
+            activate (next)
+            set next as current
+            then
+                resolve
+    otherwise
+        resolve
+    then
+        push request through worker
+```
+
 ### Notes
 
 - This stuff doesn't play nice with VPNs.
@@ -53,6 +79,6 @@ You can now add to the `worker.js` to play with the API. Lots of stuff it missin
 
 ## Contributing
 
-The TODO files contains what need to be done. I'll be submitted this as issues too. Please do add your own issues or submit PRs!
+Add an issue or submit a PR or two!
 
-If you're adding a "class" not from the spec, please prefix it with an underscore.
+If you're adding a "class" *not* from the spec, please prefix it with an underscore.
