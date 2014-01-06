@@ -9,9 +9,8 @@ var SameOriginResponse = require('./SameOriginResponse');
 
 module.exports = _Requester;
 
-_Requester.origin = '';
-_Requester.host = '';
-_Requester.networkBase = '';
+_Requester.localOrigin = {};
+_Requester.networkOrigin = {};
 
 function _Requester(request) {
     return this.networkRequest(request);
@@ -20,9 +19,12 @@ function _Requester(request) {
 _Requester.prototype.networkRequest = function (request) {
     return new Promise(function (resolve, reject) {
         var networkRequest = request;
-        // Modify the request slightly for the proxy
-        networkRequest.url = urlLib.resolve(_Requester.networkBase, request.url);
-        networkRequest.headers.host = _Requester.host;
+        var parsedUrl = urlLib.parse(request.url);
+        // Modify the request if this is a Same Origin request
+        if (parsedUrl.host === _Requester.localOrigin.host) {
+            networkRequest.headers.host = _Requester.networkOrigin.host;
+            networkRequest.url = urlLib.resolve(_Requester.networkOrigin.base, parsedUrl.path);
+        }
         _networkRequest(networkRequest, function (err, rawResponse) {
             if (err) {
                 return reject(new NetworkError(new Response({

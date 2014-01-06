@@ -7,9 +7,12 @@ var ResponsePromise = require('./ResponsePromise');
 
 module.exports = _Responder;
 
-function _Responder(request, response, requestIsNavigate) {
+/**
+ * The _Responder uses a ServiceWorker.Response to send it down a Node http.ServerResponse.
+ */
+function _Responder(request, _response, requestIsNavigate) {
     this.request = request;
-    this.response = response;
+    this._response = _response;
     this.requestType = (requestIsNavigate ? 'navigate' : 'fetch');
 }
 
@@ -29,11 +32,11 @@ _Responder.prototype.respond = function (response) {
     }
     headArgs.push(headers);
 
-    this.response.writeHead.apply(this.response, headArgs);
+    this._response.writeHead.apply(this._response, headArgs);
     if (typeof body !== 'undefined') {
-        this.response.write(body.toString());
+        this._response.write(body.toString());
     }
-    this.response.end();
+    this._response.end();
 
     return response;
 };

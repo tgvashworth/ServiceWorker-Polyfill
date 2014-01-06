@@ -56,11 +56,12 @@ var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, met
  */
 
 // Setup the _Requester with our config
-var origin = process.argv[3];
-var networkBase = process.argv[4];
-_Requester.origin = origin;
-_Requester.host = urlLib.parse(networkBase).host;
-_Requester.networkBase = networkBase;
+var localOriginBase = process.argv[3];
+var networkOriginBase = process.argv[4];
+_Requester.localOrigin = urlLib.parse(localOriginBase);
+_Requester.localOrigin.base = localOriginBase
+_Requester.networkOrigin = urlLib.parse(networkOriginBase);
+_Requester.networkOrigin.base = networkOriginBase;
 
 /**
  * Worker creation & install
@@ -98,24 +99,20 @@ var requestIsNavigate = false;
 
 // Create the server (proxy-ish)
 var server = http.createServer(function (_request, _response) {
-    // Fuck favicons, man.
-    if (_request.url.match(/favicon/)) {
-        return _response.end();
-    }
-
     console.log();
     console.log();
 
     console.log('== REQUEST ========================================== !! ====');
-    console.log(_request.url);
-    // _request.url = _request.url.replace(/^\//, '');
-    console.log('requestIsNavigate', requestIsNavigate);
-    // console.log('===================================================== !! ====');
 
     // Setup the request
     var request = new _ProxyRequest(_request);
-    var _responder = new _Responder(_request, _response, requestIsNavigate);
+
+    console.log(request.url);
+    console.log('requestIsNavigate', requestIsNavigate);
+
+    var _responder = new _Responder(request, _response, requestIsNavigate);
     var fetchEvent = new FetchEvent(request, _responder);
+    // Always reset event type
     requestIsNavigate = false;
 
     var readyPromise = _PromiseFactory.ResolvedPromise();
@@ -134,9 +131,9 @@ var server = http.createServer(function (_request, _response) {
             _responder.respondWithNetwork();
         }
     }, function (why) {
-        console.error(chalk.red('ready error'), why);
+        genericError(why);
         return _responder.respondWithNetwork();
-    });
+    }).done(null, genericError);
 }).listen(process.argv[2], function () {
     console.log('ServiceWorker server up at http://%s:%d', this.address().address, this.address().port);
 });
@@ -159,7 +156,7 @@ wss.on('connection', function (ws) {
             return requestIsNavigate = true;
         }
         if (data.type === 'postMessage') {
-            console.log('postMessage in:', data);
+            console.log('postMessage in:', data.data);
             var messageEvent = new MessageEvent(data.data);
             // We can only message an activated worker
             if (!currentWorkerData.activatePromise) return;
@@ -327,4 +324,11 @@ function activateNextWorker() {
  */
 function swapWorkers() {
     return (currentWorkerData = nextWorkerData);
+}
+
+/**
+ * Error handler
+ */
+function genericError(why) {
+    console.error(chalk.red('ready error'), why);
 }

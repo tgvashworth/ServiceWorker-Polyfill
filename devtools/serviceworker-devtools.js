@@ -4,7 +4,7 @@
 function addServiceWorker(window) {
     // Create a custom console with a useful prefix
     var console = {}
-    for(var method in window.console){
+    for (var method in window.console) {
         console[method] = window.console[method];
         if (typeof window.console[method] === "function") {
             console[method] = console[method].bind(window.console, 'serviceworker-devtools:');
@@ -21,10 +21,10 @@ function addServiceWorker(window) {
 
     var ws;
 
-    /**
+    /** ============================================================================================
      * ServiceWorker
      * Swaps in required methods
-     */
+     ============================================================================================ */
 
     function loaded() {
         if (!('serviceWorker' in window.navigator)) throw Error('No ServiceWorker API found.');
@@ -33,7 +33,19 @@ function addServiceWorker(window) {
             wsSend('postMessage', msg);
         });
 
+        navigator.registerServiceWorker.swap(function (urlGlob, workerUrl) {
+            // Fire event on the DOM. The CS-side will pick it up and inform the background page.
+            var event = new Event('serviceworker');
+            document.body.dataset[event.timeStamp] = JSON.stringify({
+                type: 'registration',
+                args: [].slice.call(arguments)
+            });
+            document.dispatchEvent(event);
+        });
     }
+
+    /** ============================================================================================
+     ============================================================================================ */
 
     /**
      * Connection
@@ -102,7 +114,11 @@ function addServiceWorker(window) {
      */
 
     connect(true);
-    window.addEventListener('load', loaded);
+    if (document.readyState === "complete") {
+        loaded();
+    } else {
+        window.addEventListener('load', loaded);
+    }
 }
 
 function thrower(error) {

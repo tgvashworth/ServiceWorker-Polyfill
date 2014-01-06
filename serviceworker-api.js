@@ -5,7 +5,10 @@
      * Stub serviceWorker API
      */
 
+    window.navigator.registerServiceWorker = bufferSwapFn('registerServiceWorker');
+
     window.navigator.serviceWorker = {
+        _polyfilled: true,
         postMessage: bufferSwapFn()
     };
 
@@ -56,7 +59,7 @@
         return proxy;
     }
 
-    function bufferSwapFn() {
+    function bufferSwapFn(name) {
         var calls = [];
         return swapFn(function () {
             return function () {
@@ -66,7 +69,8 @@
                 });
             }
         }, function (fn, newFn) {
-            calls.forEach(function (memo, call) {
+            if (name) console.log('swapping', name, calls);
+            calls.forEach(function (call) {
                 newFn.apply(call.ctx, call.args);
             });
             calls = [];
