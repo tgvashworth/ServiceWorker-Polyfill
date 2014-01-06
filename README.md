@@ -12,7 +12,7 @@ It's a bit complicated.
 - a proxy capable of modifying requests based on hostname, like [Charles](http://www.charlesproxy.com/) or hoxy – `npm install -g hoxy`)
 - Possibly OSX – I haven't tried on other platforms
 
-You'll need to be able host a local server and give it a different hostname than `localhost` - this will be your *network host*. I'd recommend `something-origin.dev`. You'll use use `something.dev` (so, no `-origin` bit) to hit the service worker. This second host is your *local host*.
+You'll need to be able host a local server and give it a different hostname than `localhost` - this will be your *network host*. I'd recommend `something-origin.dev`. You'll use `something.dev` (so, no `-origin` bit) to hit the service worker. This second host is your *local host*.
 
 I built [`distra`](https://github.com/phuu/distra) which can do this, but there are other ways. You could also use a remote server (I think, not tried).
 
