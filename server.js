@@ -7,6 +7,7 @@ var fs = require('fs');
 var WebSocketServer = require('ws').Server;
 var urlLib = require('url');
 var chalk = require('chalk');
+var httpProxy = require('http-proxy');
 
 /**
   * Internal APIs
@@ -100,15 +101,28 @@ reloadWorker();
 var requestIsNavigate = false;
 
 // Create the server (proxy-ish)
-var server = http.createServer(function (_request, _response) {
-    console.log();
-    console.log();
+var server = httpProxy.createServer(function (_request, _response, proxy) {
 
+    // Ignore requests without the X-For-Service-Worker header
+    if (typeof _request.headers['x-for-service-worker'] === 'undefined') {
+        var buffer = httpProxy.buffer(_request);
+        return proxy.proxyRequest(_request, _response, {
+            host: _request.headers.host.split(':')[0],
+            port: parseInt(_request.headers.host.split(':')[1], 10) || 80,
+            buffer: buffer
+        });
+    }
+
+    // Debugging
+    _response.setHeader('x-meddled-with', true);
+
+    console.log();
+    console.log();
     console.log('== REQUEST ========================================== !! ====');
 
     // Setup the request
     _request.path = _request.url;
-    var request = new _ProxyRequest(_request);
+    var request = new Request(_request);
 
     console.log(request.url.toString());
     console.log('requestIsNavigate', requestIsNavigate);
