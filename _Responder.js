@@ -9,10 +9,10 @@ module.exports = _Responder;
 /**
  * The _Responder uses a ServiceWorker.Response to send it down a Node http.ServerResponse.
  */
-function _Responder(request, _response, requestIsNavigate) {
+function _Responder(request, _response, requestType) {
     this.request = request;
     this._response = _response;
-    this.requestType = (requestIsNavigate ? 'navigate' : 'fetch');
+    this.requestType = requestType;
 }
 
 _Responder.prototype.respond = function (response) {

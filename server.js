@@ -91,8 +91,6 @@ fs.watch(process.argv[3], function (type) {
 
 reloadWorker();
 
-// Hacky, hacky, hacky :)
-var requestIsNavigate = false;
 
 // Create the server (proxy-ish)
 var server = httpProxy.createServer(function (_request, _response, proxy) {
@@ -121,12 +119,10 @@ var server = httpProxy.createServer(function (_request, _response, proxy) {
     var request = new Request(_request);
 
     console.log(request.url.toString());
-    console.log('requestIsNavigate', requestIsNavigate);
+    console.log('requestType', _request.headers['x-service-worker-request-type']);
 
-    var _responder = new _Responder(request, _response, requestIsNavigate);
+    var _responder = new _Responder(request, _response, _request.headers['x-service-worker-request-type']);
     var fetchEvent = new FetchEvent(request, _responder);
-    // Always reset event type
-    requestIsNavigate = false;
 
     var readyPromise = _PromiseFactory.ResolvedPromise();
     // If this is a navigate, we can activate the next worker.
@@ -165,9 +161,7 @@ wss.on('connection', function (ws) {
     ws.on('message', function (message) {
         // TODO guard this
         var data = JSON.parse(message);
-        if (data.type === 'navigate') {
-            return requestIsNavigate = true;
-        }
+        
         if (data.type === 'postMessage') {
             console.log('postMessage in:', data.data);
             var messageEvent = new MessageEvent(data.data);
