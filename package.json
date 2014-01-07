@@ -13,7 +13,8 @@
     "argyle": "0.0.1",
     "http-proxy": "~0.10.3",
     "chalk": "~0.3.0",
-    "hide-key": "0.0.1"
+    "hide-key": "0.0.1",
+    "dom-urls": "~0.1.0"
   },
   "devDependencies": {},
   "scripts": {

@@ -1,5 +1,4 @@
 var Promise = require('promise');
-var urlLib = require('url');
 var Request = require('./Request');
 var _ProxyRequest = require('./_ProxyRequest');
 var Response = require('./Response');
@@ -45,17 +44,21 @@ _Responder.prototype.respondWithNetwork = function () {
     return this.goToNetwork().then(
         this.respond.bind(this),
         function (why) {
-            // There was a network error, but we got something back
-            // so roll with it. I'm sure this can be cleaned up.
-            // FIXME: caching this could be really bad.
-            return this.respond(new Response(why.response));
+            console.error('goToNetwork error:', why);
+            if (why.response) {
+                // There was a network error, but we got something back
+                // so roll with it. I'm sure this can be cleaned up.
+                // FIXME: caching this could be really bad.
+                return this.respond(new Response(why.response));
+            } else {
+                throw why;
+            }
         }.bind(this)
     );
 }
 
 _Responder.prototype.goToNetwork = function () {
-    var request = new _ProxyRequest(this.request);
-    request.headers['x-sent-from-responder'] = true;
-    request.headers['x-original-url'] = request.url;
-    return new ResponsePromise(request);
+    this.request.headers['x-sent-from-responder'] = true;
+    this.request.headers['x-original-url'] = this.request.url;
+    return new ResponsePromise(this.request);
 };

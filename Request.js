@@ -1,3 +1,4 @@
+var URL = require('dom-urls');
 module.exports = Request;
 
 function Request(params) {
@@ -9,7 +10,7 @@ function Request(params) {
             this.timeout = params.timeout;
         }
         if (typeof params.url != "undefined") {
-            this.url = params.url;
+            this.url = new URL(params.url);
         }
         if (typeof params.method != "undefined") {
             this.method = params.method;

@@ -40,7 +40,6 @@ Cache.prototype.match = function (key) {
         if (items.has(key)) {
             return items.get(key);
         }
-        console.log('cache miss', key);
         throw new CacheError('Not found in cache.');
     });
 };

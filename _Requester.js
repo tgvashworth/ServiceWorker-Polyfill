@@ -1,11 +1,11 @@
 var fs = require('fs');
 var mime = require('mime');
-var urlLib = require('url');
 var _networkRequest = require('request');
 var Promise = require('promise');
 var Response = require('./Response');
 var NetworkError = require('./NetworkError');
 var SameOriginResponse = require('./SameOriginResponse');
+var URL = require('dom-urls');
 
 module.exports = _Requester;
 
@@ -19,12 +19,13 @@ function _Requester(request) {
 _Requester.prototype.networkRequest = function (request) {
     return new Promise(function (resolve, reject) {
         var networkRequest = request;
-        var parsedUrl = urlLib.parse(request.url);
         // Modify the request if this is a Same Origin request
-        if (parsedUrl.host === _Requester.localOrigin.host) {
+        if (request.url.host === _Requester.localOrigin.host) {
             networkRequest.headers.host = _Requester.networkOrigin.host;
-            networkRequest.url = urlLib.resolve(_Requester.networkOrigin.base, parsedUrl.path);
+            networkRequest.url = new URL(request.url.path, _Requester.networkOrigin.base);
         }
+        // Convert from URL type back to string for requestin'
+        networkRequest.url = networkRequest.url.toString();
         _networkRequest(networkRequest, function (err, rawResponse) {
             if (err) {
                 return reject(new NetworkError(new Response({

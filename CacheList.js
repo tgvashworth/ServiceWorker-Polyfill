@@ -1,5 +1,4 @@
 var util = require('util');
-var urlLib = require('url');
 var AsyncMap = require('./AsyncMap');
 var Promise = require('promise');
 util.inherits(CacheList, AsyncMap);

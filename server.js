@@ -26,6 +26,8 @@ var ServiceWorker = require('./ServiceWorker');
 
 var Promise = require('Promise');
 
+var URL = require('dom-urls');
+
 var AsyncMap = require('./AsyncMap');
 var CacheList = require('./CacheList');
 var CacheItemList = require('./CacheItemList');
@@ -58,9 +60,9 @@ var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, met
 // Setup the _Requester with our config
 var localOriginBase = process.argv[3];
 var networkOriginBase = process.argv[4];
-_Requester.localOrigin = urlLib.parse(localOriginBase);
+_Requester.localOrigin = new URL(localOriginBase);
 _Requester.localOrigin.base = localOriginBase
-_Requester.networkOrigin = urlLib.parse(networkOriginBase);
+_Requester.networkOrigin = new URL(networkOriginBase);
 _Requester.networkOrigin.base = networkOriginBase;
 
 /**
@@ -105,9 +107,10 @@ var server = http.createServer(function (_request, _response) {
     console.log('== REQUEST ========================================== !! ====');
 
     // Setup the request
+    _request.path = _request.url;
     var request = new _ProxyRequest(_request);
 
-    console.log(request.url);
+    console.log(request.url.toString());
     console.log('requestIsNavigate', requestIsNavigate);
 
     var _responder = new _Responder(request, _response, requestIsNavigate);
@@ -217,7 +220,7 @@ function setupWorker(workerFile) {
         'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent', 'MessageEvent',
         'Response', 'SameOriginResponse',
         'Request',
-        'fetch',
+        'fetch', 'URL',
         'Promise',
         'console', // teehee
         // Function body
@@ -232,7 +235,7 @@ function setupWorker(workerFile) {
             Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
             Response, SameOriginResponse,
             Request,
-            fetch,
+            fetch, URL,
             Promise,
             fakeConsole
         );
@@ -331,4 +334,5 @@ function swapWorkers() {
  */
 function genericError(why) {
     console.error(chalk.red('ready error'), why);
+    console.error(why.stack);
 }

@@ -29,7 +29,7 @@ FetchEvent.prototype.respondWith = function (response) {
 
     var responsePromise = response;
     if (_instanceOf(response, Response)) {
-        responsePromise = new Promise(function (resolve, respond) {
+        responsePromise = new Promise(function (resolve, reject) {
             resolve(response);
         });
     }
