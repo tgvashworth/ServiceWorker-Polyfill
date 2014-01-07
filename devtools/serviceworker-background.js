@@ -17,6 +17,12 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         if (webRequestTabIds.has(details.tabId)) {
             // Notify the SW server that this request should be handled
             // console.log('modifying request', details);
+
+            details.requestHeaders.push({
+                name: 'X-Service-Worker-Request-Type',
+                value: (details.type == "main_frame" || details.type == "sub_frame") ? 'navigate' : 'fetch'
+            });
+
             details.requestHeaders.push({
                 name: 'X-For-Service-Worker',
                 value: '1'

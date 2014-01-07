@@ -8,7 +8,6 @@
             "serviceworker-background.js"
         ]
     },
-    "devtools_page": "devtools.html",
     "permissions": [
         "tabs",
         "<all_urls>",
