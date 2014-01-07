@@ -9,7 +9,7 @@
 
     window.navigator.serviceWorker = {
         _polyfilled: true,
-        postMessage: bufferSwapFn()
+        postMessage: bufferSwapFn('postMessage')
     };
 
     /**
