@@ -9,9 +9,6 @@ var URL = require('dom-urls');
 
 module.exports = _Requester;
 
-_Requester.localOrigin = {};
-_Requester.networkOrigin = {};
-
 function _Requester(request) {
     return this.networkRequest(request);
 }
@@ -20,10 +17,10 @@ _Requester.prototype.networkRequest = function (request) {
     return new Promise(function (resolve, reject) {
         var networkRequest = request;
         // Modify the request if this is a Same Origin request
-        if (request.url.host === _Requester.localOrigin.host) {
-            networkRequest.headers.host = _Requester.networkOrigin.host;
-            networkRequest.url = new URL(request.url.path, _Requester.networkOrigin.base);
-        }
+        // if (request.url.host === _Requester.localOrigin.host) {
+        //     networkRequest.headers.host = _Requester.networkOrigin.host;
+        //     networkRequest.url = new URL(request.url.path, _Requester.networkOrigin.base);
+        // }
         // Convert from URL type back to string for requestin'
         networkRequest.url = networkRequest.url.toString();
         _networkRequest(networkRequest, function (err, rawResponse) {

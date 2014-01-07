@@ -58,14 +58,6 @@ var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, met
  * Config
  */
 
-// Setup the _Requester with our config
-var localOriginBase = process.argv[3];
-var networkOriginBase = process.argv[4];
-_Requester.localOrigin = new URL(localOriginBase);
-_Requester.localOrigin.base = localOriginBase
-_Requester.networkOrigin = new URL(networkOriginBase);
-_Requester.networkOrigin.base = networkOriginBase;
-
 /**
  * Worker creation & install
  */
@@ -86,8 +78,10 @@ var newWorkerData = Object.create(templateWorkerData);
  * Go, go, go.
  =============================================================================================== **/
 
+console.log('process.argv', process.argv);
+
 // Watch the worker
-fs.watch(process.argv[5], function (type) {
+fs.watch(process.argv[3], function (type) {
     if (type !== "change") return;
     console.log();
     console.log();
@@ -113,6 +107,8 @@ var server = httpProxy.createServer(function (_request, _response, proxy) {
         });
     }
 
+    // This may go to the network, so delete the ServiceWorker
+    delete _request.headers['x-for-service-worker'];
     // Debugging
     _response.setHeader('x-meddled-with', true);
 
@@ -193,7 +189,7 @@ wss.on('connection', function (ws) {
  */
 
 function readWorker() {
-    return fs.readFileSync(process.argv[5], { encoding: 'utf-8' });
+    return fs.readFileSync(process.argv[3], { encoding: 'utf-8' });
 }
 
 /**
