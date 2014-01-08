@@ -2,7 +2,10 @@ var browserLauncher = require('./browserLauncher');
 var startServer = require('./server').startServer;
 var argv = require('optimist').argv;
 
-browserLauncher(argv['browser-path']).then(function(browserProcess) {
+var proxyPort = argv.port || 5678;
+var workerPath = argv.worker || "worker.js";
+
+browserLauncher(argv['browser-path'], proxyPort).then(function(browserProcess) {
   browserProcess.on('exit', function(code) {
     if (code) {
       console.error("Browser unexpectedly exited");
@@ -16,5 +19,5 @@ browserLauncher(argv['browser-path']).then(function(browserProcess) {
     console.error(err.message);
     process.exit(1);
 }).then(function() {
-    startServer(argv.port || 5678, argv.worker || "worker.js");
+    startServer(proxyPort, workerPath);
 });
