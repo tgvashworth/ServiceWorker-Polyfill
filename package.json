@@ -14,7 +14,8 @@
     "chalk": "~0.3.0",
     "hide-key": "0.0.1",
     "dom-urls": "~0.1.0",
-    "rsvp": "~3.0.3"
+    "rsvp": "~3.0.3",
+    "optimist": "~0.6.0"
   },
   "devDependencies": {},
   "scripts": {

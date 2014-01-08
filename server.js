@@ -77,115 +77,118 @@ var newWorkerData = Object.create(templateWorkerData);
  * Go, go, go.
  =============================================================================================== **/
 
-console.log('process.argv', process.argv);
-
-// Watch the worker
-fs.watch(process.argv[3], function (type) {
-    if (type !== "change") return;
-    console.log();
-    console.log();
-    console.log(chalk.blue('Worker file changed!'));
-    reloadWorker();
-});
-
-reloadWorker();
-
-
-// Create the server (proxy-ish)
-var server = httpProxy.createServer(function (_request, _response, proxy) {
-
-    // Ignore requests without the X-For-Service-Worker header
-    if (typeof _request.headers['x-for-service-worker'] === 'undefined') {
-        var buffer = httpProxy.buffer(_request);
-        return proxy.proxyRequest(_request, _response, {
-            host: _request.headers.host.split(':')[0],
-            port: parseInt(_request.headers.host.split(':')[1], 10) || 80,
-            buffer: buffer
-        });
-    }
-
-    // This may go to the network, so delete the ServiceWorker
-    delete _request.headers['x-for-service-worker'];
-    // Debugging
-    _response.setHeader('x-meddled-with', true);
-
-    console.log();
-    console.log();
-    console.log('== REQUEST ========================================== !! ====');
-
-    // Setup the request
-    _request.path = _request.url;
-    var request = new Request(_request);
-
-    console.log(request.url.toString());
-    console.log('requestType', _request.headers['x-service-worker-request-type']);
-
-    var _responder = new _Responder(request, _response, _request.headers['x-service-worker-request-type']);
-    var fetchEvent = new FetchEvent(request, _responder);
-
-    var readyPromise = Promise.resolve();
-    // If this is a navigate, we can activate the next worker.
-    // This may not actually do any swapping if the worker is not waiting, having
-    // been installed and activated.
-    if (fetchEvent.type === 'navigate') {
-        readyPromise = nextWorkerData.installPromise.then(activateNextWorker);
-    }
-
-    readyPromise.then(function () {
-        // Whatever happens above, we should now have an installed, activated worker
-        currentWorkerData.worker.dispatchEvent(fetchEvent);
-        // If the worker has not called respondWith, we should go to network.
-        if (!fetchEvent._isStopped()) {
-            console.log('going to the network (default)');
-            _responder.respondWithNetwork().done(null, function (why) {
-                genericError(why);
-            });
-        }
-    }, function (why) {
-        genericError(why);
-        return _responder.respondWithNetwork();
-    }).catch(genericError);
-}).listen(process.argv[2], function () {
-    console.log('ServiceWorker server up at http://%s:%d', this.address().address, this.address().port);
-});
-
 /**
  * WebSocket comes from devtools extension.
  * It uses beforeunload events to notify the service worker when events
  * are navigations.
  */
-var wss = new WebSocketServer({ server: server });
-// TODO only accept one connection per page
-wss.on('connection', function (ws) {
-    console.log('ws: connection');
-    _messenger.add(ws);
-    // Listen up!
-    ws.on('message', function (message) {
-        // TODO guard this
-        var data = JSON.parse(message);
+var workerPath;
 
-        if (data.type === 'postMessage') {
-            console.log('postMessage in:', data.data);
-            var messageEvent = new MessageEvent(data.data);
-            // We can only message an activated worker
-            if (!currentWorkerData.activatePromise) return;
-            currentWorkerData.activatePromise.then(function () {
-                currentWorkerData.worker.dispatchEvent(messageEvent);
+function startServer(port, wp) {
+    workerPath = wp;
+
+    // Watch the worker
+    fs.watch(workerPath, function (type) {
+        if (type !== "change") return;
+        console.log();
+        console.log();
+        console.log(chalk.blue('Worker file changed!'));
+        reloadWorker();
+    });
+
+    reloadWorker();
+
+    // Create the server (proxy-ish)
+    var server = httpProxy.createServer(function (_request, _response, proxy) {
+
+        // Ignore requests without the X-For-Service-Worker header
+        if (typeof _request.headers['x-for-service-worker'] === 'undefined') {
+            var buffer = httpProxy.buffer(_request);
+            return proxy.proxyRequest(_request, _response, {
+                host: _request.headers.host.split(':')[0],
+                port: parseInt(_request.headers.host.split(':')[1], 10) || 80,
+                buffer: buffer
             });
         }
+
+        // This may go to the network, so delete the ServiceWorker
+        delete _request.headers['x-for-service-worker'];
+        // Debugging
+        _response.setHeader('x-meddled-with', true);
+
+        console.log();
+        console.log();
+        console.log('== REQUEST ========================================== !! ====');
+
+        // Setup the request
+        _request.path = _request.url;
+        var request = new Request(_request);
+
+        console.log(request.url.toString());
+        console.log('requestType', _request.headers['x-service-worker-request-type']);
+
+        var _responder = new _Responder(request, _response, _request.headers['x-service-worker-request-type']);
+        var fetchEvent = new FetchEvent(request, _responder);
+
+        var readyPromise = Promise.resolve();
+        // If this is a navigate, we can activate the next worker.
+        // This may not actually do any swapping if the worker is not waiting, having
+        // been installed and activated.
+        if (fetchEvent.type === 'navigate') {
+            readyPromise = nextWorkerData.installPromise.then(activateNextWorker);
+        }
+
+        readyPromise.then(function () {
+            // Whatever happens above, we should now have an installed, activated worker
+            currentWorkerData.worker.dispatchEvent(fetchEvent);
+            // If the worker has not called respondWith, we should go to network.
+            if (!fetchEvent._isStopped()) {
+                console.log('going to the network (default)');
+                _responder.respondWithNetwork().done(null, function (why) {
+                    genericError(why);
+                });
+            }
+        }, function (why) {
+            genericError(why);
+            return _responder.respondWithNetwork();
+        }).catch(genericError);
+    }).listen(port, function () {
+        console.log('ServiceWorker server up at http://%s:%d', this.address().address, this.address().port);
     });
-    ws.on('close', function (message) {
-        console.log('ws: close');
-        _messenger.remove(ws);
+
+    var wss = new WebSocketServer({ server: server });
+    // TODO only accept one connection per page
+    wss.on('connection', function (ws) {
+        console.log('ws: connection');
+        _messenger.add(ws);
+        // Listen up!
+        ws.on('message', function (message) {
+            // TODO guard this
+            var data = JSON.parse(message);
+            
+            if (data.type === 'postMessage') {
+                console.log('postMessage in:', data.data);
+                var messageEvent = new MessageEvent(data.data);
+                // We can only message an activated worker
+                if (!currentWorkerData.activatePromise) return;
+                currentWorkerData.activatePromise.then(function () {
+                    currentWorkerData.worker.dispatchEvent(messageEvent);
+                });
+            }
+        });
+        ws.on('close', function (message) {
+            console.log('ws: close');
+            _messenger.remove(ws);
+        });
     });
-});
+}
 
 /**
  * Utils
  */
 
 function readWorker() {
-    return fs.readFileSync(process.argv[3], { encoding: 'utf-8' });
+    return fs.readFileSync(workerPath, { encoding: 'utf-8' });
 }
 
 /**
@@ -342,3 +345,5 @@ function genericError(why) {
     console.error(chalk.red('ready error'), why);
     console.error(why.stack);
 }
+
+module.exports.startServer = startServer;
