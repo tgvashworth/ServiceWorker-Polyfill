@@ -46,7 +46,7 @@ distra add demosite-origin.dev
 1. Start the *network origin server* to serve the `site/` directory. You should be able to access it as you would any other website, ie. opening [http://demosite-origin.dev/](http://demosite-origin.dev/) should show you the "Regular old index page". (Covered by distra)
 2. Configure your machine/browser's HTTP proxy settings to go through the proxy. By default, this will be `localhost:5678`.
 3. Install the dependencies with `npm install`.
-4. Start the SevicerWorker server. Run `node --harmony server.js 5678 http://demosite.dev/ http://demosite-origin.dev/ worker.js`.
+4. Start the SevicerWorker server. Run `node --harmony server.js 5678 worker.js`.
 5. Install the unpacked Chrome extension from the `devtools/` folder of this project. You *must* have devtools open when testing this stuff; the devtools extension connects to the ServiceWorker server via WebSocket to inform it when a navigation is occuring.
 6. Start the *ServiceWorker resources server* to serve the root of the project directory under the name `serviceworker-resource.dev` (**note:** you might have covered by using distra, above)
 
