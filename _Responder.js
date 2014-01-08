@@ -36,6 +36,6 @@ _Responder.prototype.respond = function (response) {
 }
 
 _Responder.prototype.respondWithNetwork = function () {
-    request.headers['x-sent-from-responder'] = true;
+    this.request.headers['x-sent-from-responder'] = true;
     return new ResponsePromise(this.request).then(this.respond.bind(this));
 }
