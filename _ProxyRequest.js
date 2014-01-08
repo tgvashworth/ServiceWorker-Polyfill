@@ -1,5 +1,5 @@
 var util = require('util');
-var Promise = require('promise');
+var Promise = require('rsvp').Promise;
 var Request = require('./Request');
 var URL = require('dom-urls');
 util.inherits(_ProxyRequest, Request);

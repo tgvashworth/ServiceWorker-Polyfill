@@ -1,7 +1,7 @@
 var util = require('util');
 var hide = require('hide-key');
 var instanceOf = require('./_instanceOf');
-var Promise = require('promise');
+var Promise = require('rsvp').Promise;
 
 module.exports = AsyncMap;
 

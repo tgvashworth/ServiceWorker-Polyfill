@@ -4,7 +4,7 @@ var _instanceOf = require('./_instanceOf');
 var Event = require('./Event');
 var Response = require('./Response');
 var SameOriginResponse = require('./SameOriginResponse');
-var Promise = require('promise');
+var Promise = require('rsvp').Promise;
 util.inherits(MessageEvent, Event);
 
 module.exports = MessageEvent;
