@@ -33,7 +33,7 @@ function ask(question, opts) {
     });
 }
 
-module.exports = function browserLauncher(chromiumPath) {
+module.exports = function browserLauncher(chromiumPath, proxyPort) {
     return Promise.resolve().then(function() {
         if (chromiumPath) {
             return chromiumPath;
@@ -51,7 +51,7 @@ module.exports = function browserLauncher(chromiumPath) {
         });
     }).then(function(chromiumPath) {
         var process = spawn(chromiumPath, [
-            "--proxy-server=http=localhost:5678",
+            "--proxy-server=http=localhost:" + Number(proxyPort),
             "--load-extension=" + path.join(__dirname, "devtools")
         ]);
 
