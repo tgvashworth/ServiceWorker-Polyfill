@@ -1,5 +1,5 @@
 var _Requester = require('./_Requester');
-var Promise = require('promise');
+var Promise = require('rsvp').Promise;
 var Response = require('./Response');
 
 module.exports = ResponsePromise;

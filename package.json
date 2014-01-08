@@ -5,7 +5,6 @@
   "main": "Event.js",
   "dependencies": {
     "request": "~2.29.0",
-    "promise": "~3.2.0",
     "mime": "~1.2.11",
     "ws": "~0.4.31",
     "node-socks": "~0.1.0",
@@ -14,7 +13,8 @@
     "http-proxy": "~0.10.4",
     "chalk": "~0.3.0",
     "hide-key": "0.0.1",
-    "dom-urls": "~0.1.0"
+    "dom-urls": "~0.1.0",
+    "rsvp": "~3.0.3"
   },
   "devDependencies": {},
   "scripts": {

@@ -15,7 +15,6 @@ var httpProxy = require('http-proxy');
 var _Requester = require('./_Requester');
 var _Responder = require('./_Responder');
 var _ProxyRequest = require('./_ProxyRequest');
-var _PromiseFactory = require('./_PromiseFactory');
 // Messenger is a singleton given to all ServiceWorkers for to postMessage it up.
 var _Messenger = require('./_Messenger');
 var _messenger = new _Messenger();
@@ -25,7 +24,7 @@ var _messenger = new _Messenger();
  */
 var ServiceWorker = require('./ServiceWorker');
 
-var Promise = require('Promise');
+var Promise = require('rsvp').Promise;
 
 var URL = require('dom-urls');
 
@@ -68,8 +67,8 @@ var templateWorkerData = {
     isNew: false,
     isUpgrade: false,
     isWaiting: false,
-    installPromise: _PromiseFactory.ResolvedPromise(),
-    activatePromise: _PromiseFactory.RejectedPromise()
+    installPromise: Promise.resolve(),
+    activatePromise: Promise.reject()
 };
 var currentWorkerData = Object.create(templateWorkerData);
 var newWorkerData = Object.create(templateWorkerData);
@@ -124,7 +123,7 @@ var server = httpProxy.createServer(function (_request, _response, proxy) {
     var _responder = new _Responder(request, _response, _request.headers['x-service-worker-request-type']);
     var fetchEvent = new FetchEvent(request, _responder);
 
-    var readyPromise = _PromiseFactory.ResolvedPromise();
+    var readyPromise = Promise.resolve();
     // If this is a navigate, we can activate the next worker.
     // This may not actually do any swapping if the worker is not waiting, having
     // been installed and activated.
@@ -142,7 +141,7 @@ var server = httpProxy.createServer(function (_request, _response, proxy) {
     }, function (why) {
         genericError(why);
         return _responder.respondWithNetwork();
-    }).done(null, genericError);
+    }).catch(genericError);
 }).listen(process.argv[2], function () {
     console.log('ServiceWorker server up at http://%s:%d', this.address().address, this.address().port);
 });
@@ -276,7 +275,7 @@ function installWorker(workerData) {
         }
     });
     // How'd we do?
-    installPromise.done(function () {
+    installPromise.then(function () {
         console.log(chalk.green('Installed worker version:'), chalk.yellow(workerData.worker.version));
         workerData.isInstalled = true;
     }, function () {
@@ -301,7 +300,7 @@ function activateWorker(workerData) {
         }
     });
     // How'd we do?
-    activatePromise.done(function () {
+    activatePromise.then(function () {
         workerData.isWaiting = false;
         console.log(chalk.green('Activated worker version:'), chalk.yellow(workerData.worker.version));
     }, function () {

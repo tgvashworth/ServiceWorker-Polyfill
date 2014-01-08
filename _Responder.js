@@ -1,4 +1,4 @@
-var Promise = require('promise');
+var Promise = require('rsvp').Promise;
 var Request = require('./Request');
 var _ProxyRequest = require('./_ProxyRequest');
 var Response = require('./Response');

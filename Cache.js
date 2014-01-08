@@ -1,6 +1,5 @@
 var hide = require('hide-key');
-var Promise = require('promise');
-var _PromiseFactory = require('./_PromiseFactory');
+var Promise = require('rsvp').Promise;
 var _instanceOf = require('./_instanceOf');
 
 var Request = require('./Request');
@@ -8,7 +7,7 @@ var Response = require('./Response');
 var ResponsePromise = require('./ResponsePromise');
 
 var CacheItemList = require('./CacheItemList');
-var CacheError = require('./CacheError')
+var CacheError = require('./CacheError');
 
 module.exports = Cache;
 

@@ -1,5 +1,5 @@
 var util = require('util');
-var Promise = require('promise');
+var Promise = require('rsvp').Promise;
 var Event = require('./Event');
 var hide = require('hide-key');
 
