@@ -11,14 +11,17 @@ function AsyncMap() {
 }
 
 AsyncMap.prototype.has = function (key) {
+    key = key.toString();
     return this._indexMap.hasOwnProperty(key);
 };
 
 AsyncMap.prototype.get = function (key) {
+    key = key.toString();
     return this._list[this._indexMap[key]];
 };
 
 AsyncMap.prototype.set = function (key, value) {
+    key = key.toString();
     if (this.has(key)) {
         this._list[this._indexMap[key]] = value;
     } else {

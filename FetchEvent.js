@@ -40,5 +40,5 @@ FetchEvent.prototype.respondWith = function (response) {
         console.error('_responder error', why);
         console.error(why.stack);
         throw why;
-    })
+    });
 };

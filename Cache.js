@@ -31,6 +31,7 @@ Cache.prototype.ready = function () {
 // FIXME: what happens if the request are still being made? Should we wait
 // until they're ready to match?
 Cache.prototype.match = function (key) {
+    key = key.toString();
     if (!this._isReady) {
         console.log('cache not ready')
         throw new CacheError('Cache is not ready.');
@@ -45,6 +46,7 @@ Cache.prototype.match = function (key) {
 };
 
 Cache.prototype.add = function (key, response) {
+    key = key.toString();
     if (typeof response !== "undefined" &&
         _instanceOf(response, Response)) {
         var newResponse = new Response(response);

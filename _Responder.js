@@ -1,7 +1,8 @@
 var Promise = require('promise');
 var Request = require('./Request');
-var _ProxyRequest = require('./_ProxyRequest');
+var _Requester = require('./_Requester');
 var Response = require('./Response');
+var URL = require('dom-urls');
 var ResponsePromise = require('./ResponsePromise');
 
 module.exports = _Responder;
@@ -17,10 +18,6 @@ function _Responder(request, _response, requestType) {
 
 _Responder.prototype.respond = function (response) {
     var headers = response.headers || {};
-    var body = response.body;
-    if (typeof body !== 'undefined') {
-        headers['Content-Length'] = Buffer.byteLength(body);
-    }
 
     var headArgs = [];
     if (typeof response.statusCode !== 'undefined') {
@@ -32,33 +29,13 @@ _Responder.prototype.respond = function (response) {
     headArgs.push(headers);
 
     this._response.writeHead.apply(this._response, headArgs);
-    if (typeof body !== 'undefined') {
-        this._response.write(body.toString());
+    if (typeof response.body !== 'undefined') {
+        this._response.write(response.body, (Buffer.isBuffer(response.body) ? 'binary' : 'utf8'))
     }
     this._response.end();
-
-    return response;
-};
-
-_Responder.prototype.respondWithNetwork = function () {
-    return this.goToNetwork().then(
-        this.respond.bind(this),
-        function (why) {
-            console.error('goToNetwork error:', why);
-            if (why.response) {
-                // There was a network error, but we got something back
-                // so roll with it. I'm sure this can be cleaned up.
-                // FIXME: caching this could be really bad.
-                return this.respond(new Response(why.response));
-            } else {
-                throw why;
-            }
-        }.bind(this)
-    );
 }
 
-_Responder.prototype.goToNetwork = function () {
-    this.request.headers['x-sent-from-responder'] = true;
-    this.request.headers['x-original-url'] = this.request.url;
-    return new ResponsePromise(this.request);
-};
+_Responder.prototype.respondWithNetwork = function () {
+    request.headers['x-sent-from-responder'] = true;
+    return new ResponsePromise(this.request).then(this.respond.bind(this));
+}

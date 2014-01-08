@@ -5,8 +5,7 @@ this.version = 1;
 var caches = this.caches;
 this.addEventListener('install', function (event) {
     var cache = new Cache(
-        new URL('assets/app.3.js', 'http://demosite.dev'),
-        new URL('http://pbs.twimg.com/profile_images/1188958802/image_normal.jpg')
+        new URL('assets/app.3.js', 'http://demosite.dev')
     );
     caches.set('cache', cache);
     event.waitUntil(
@@ -17,10 +16,7 @@ this.addEventListener('install', function (event) {
 this.addEventListener('fetch', function (event) {
     console.log('event.request.url', event.request.url.toString());
     event.respondWith(
-        caches.match(event.request.url).then(function (response) {
-            console.log('response', response);
-            return response;
-        }, function () {
+        caches.match(event.request.url).then(null, function () {
             return fetch(event.request.url);
         })
     );

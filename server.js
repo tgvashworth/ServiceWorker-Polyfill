@@ -137,7 +137,10 @@ var server = httpProxy.createServer(function (_request, _response, proxy) {
         currentWorkerData.worker.dispatchEvent(fetchEvent);
         // If the worker has not called respondWith, we should go to network.
         if (!fetchEvent._isStopped()) {
-            _responder.respondWithNetwork();
+            console.log('going to the network (default)');
+            _responder.respondWithNetwork().done(null, function (why) {
+                genericError(why);
+            });
         }
     }, function (why) {
         genericError(why);
@@ -161,7 +164,7 @@ wss.on('connection', function (ws) {
     ws.on('message', function (message) {
         // TODO guard this
         var data = JSON.parse(message);
-        
+
         if (data.type === 'postMessage') {
             console.log('postMessage in:', data.data);
             var messageEvent = new MessageEvent(data.data);
