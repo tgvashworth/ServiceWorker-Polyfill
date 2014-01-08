@@ -9,15 +9,12 @@ util.inherits(FetchEvent, Event);
 
 module.exports = FetchEvent;
 
-function FetchEvent(request, _responder) {
+function FetchEvent(type, request, _responder) {
     Event.call(this, 'fetch');
+    this.type = type;
     hide(this, '_responder', _responder);
     this.request = request;
-    this.type = _responder.requestType;
     this.isTopLevel = false;
-    if (this.type === "navigate") {
-        this.isTopLevel = true;
-    }
 }
 
 FetchEvent.prototype.respondWith = function (response) {

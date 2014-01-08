@@ -35,6 +35,7 @@ var Cache = require('./Cache');
 
 var fetch = require('./fetch');
 
+var ResponsePromise = require('./ResponsePromise');
 var Response = require('./Response');
 var SameOriginResponse = require('./SameOriginResponse');
 var Request = require('./Request');
@@ -58,128 +59,126 @@ var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, met
  */
 
 /**
- * Worker creation & install
+ * Worker data
  */
 
-var templateWorkerData = {
+var templateWorkerState = {
     worker: null,
     content: '',
-    isNew: false,
-    isUpgrade: false,
-    isWaiting: false,
-    installPromise: Promise.resolve(),
-    activatePromise: Promise.reject()
+    installing: {},
+    active: {}
 };
-var currentWorkerData = Object.create(templateWorkerData);
-var newWorkerData = Object.create(templateWorkerData);
+
+var globToWorkerState = {};
 
 /** ================================================================================================
  * Go, go, go.
  =============================================================================================== **/
 
-/**
- * WebSocket comes from devtools extension.
- * It uses beforeunload events to notify the service worker when events
- * are navigations.
- */
-var workerPath;
+module.exports.startServer = startServer;
+function startServer(port) {
 
-function startServer(port, wp) {
-    workerPath = wp;
+    /**
+      * Proxy server. Pass-through unless X-For-Service-Worker header is present on the request.
+      */
+    var server = httpProxy.createServer(processRequest).listen(port);
 
-    // Watch the worker
-    fs.watch(workerPath, function (type) {
-        if (type !== "change") return;
-        console.log();
-        console.log();
-        console.log(chalk.blue('Worker file changed!'));
-        reloadWorker();
-    });
-
-    reloadWorker();
-
-    // Create the server (proxy-ish)
-    var server = httpProxy.createServer(function (_request, _response, proxy) {
-
-        // Ignore requests without the X-For-Service-Worker header
-        if (typeof _request.headers['x-for-service-worker'] === 'undefined') {
-            var buffer = httpProxy.buffer(_request);
-            return proxy.proxyRequest(_request, _response, {
-                host: _request.headers.host.split(':')[0],
-                port: parseInt(_request.headers.host.split(':')[1], 10) || 80,
-                buffer: buffer
-            });
-        }
-
-        // This may go to the network, so delete the ServiceWorker
-        delete _request.headers['x-for-service-worker'];
-        // Debugging
-        _response.setHeader('x-meddled-with', true);
-
-        console.log();
-        console.log();
-        console.log('== REQUEST ========================================== !! ====');
-
-        // Setup the request
-        _request.path = _request.url;
-        var request = new Request(_request);
-
-        console.log(request.url.toString());
-        console.log('requestType', _request.headers['x-service-worker-request-type']);
-
-        var _responder = new _Responder(request, _response, _request.headers['x-service-worker-request-type']);
-        var fetchEvent = new FetchEvent(request, _responder);
-
-        var readyPromise = Promise.resolve();
-        // If this is a navigate, we can activate the next worker.
-        // This may not actually do any swapping if the worker is not waiting, having
-        // been installed and activated.
-        if (fetchEvent.type === 'navigate') {
-            readyPromise = nextWorkerData.installPromise.then(activateNextWorker);
-        }
-
-        readyPromise.then(function () {
-            // Whatever happens above, we should now have an installed, activated worker
-            currentWorkerData.worker.dispatchEvent(fetchEvent);
-            // If the worker has not called respondWith, we should go to network.
-            if (!fetchEvent._isStopped()) {
-                console.log('going to the network (default)');
-                _responder.respondWithNetwork().done(null, function (why) {
-                    genericError(why);
-                });
-            }
-        }, function (why) {
-            genericError(why);
-            return _responder.respondWithNetwork();
-        }).catch(genericError);
-    }).listen(port, function () {
-        console.log('ServiceWorker server up at http://%s:%d', this.address().address, this.address().port);
-    });
-
+    /**
+     * WebSocket comes from devtools extension.
+     * It uses beforeunload events to notify the service worker when events
+     * are navigations.
+     */
     var wss = new WebSocketServer({ server: server });
     // TODO only accept one connection per page
     wss.on('connection', function (ws) {
-        console.log('ws: connection');
         _messenger.add(ws);
         // Listen up!
         ws.on('message', function (message) {
             // TODO guard this
             var data = JSON.parse(message);
-            
-            if (data.type === 'postMessage') {
-                console.log('postMessage in:', data.data);
-                var messageEvent = new MessageEvent(data.data);
-                // We can only message an activated worker
-                if (!currentWorkerData.activatePromise) return;
-                currentWorkerData.activatePromise.then(function () {
-                    currentWorkerData.worker.dispatchEvent(messageEvent);
-                });
+
+            if (data.type === 'register') {
+                registerServiceWorker.apply(null, data.data.args);
             }
+
+            // if (data.type === 'postMessage') {
+            //     console.log('postMessage in:', data.data);
+            //     var messageEvent = new MessageEvent(data.data);
+            //     // We can only message an activated worker
+            //     if (!currentWorkerData.activatePromise) return;
+            //     currentWorkerData.activatePromise.then(function () {
+            //         currentWorkerData.worker.dispatchEvent(messageEvent);
+            //     });
+            // }
         });
         ws.on('close', function (message) {
-            console.log('ws: close');
             _messenger.remove(ws);
         });
+    });
+}
+
+/**
+ * Request processors
+ */
+
+function processRequest(_request, _response, proxy) {
+    // Ignore requests without the X-For-Service-Worker header
+    // if (typeof _request.headers['x-for-service-worker'] === 'undefined') {
+    //     return passThroughRequest(_request, _response, proxy);
+    // }
+
+    // This may go to the network, so delete the ServiceWorker header
+    // delete _request.headers['x-for-service-worker'];
+    _response.setHeader('x-meddled-with', true);
+
+
+    /**
+     * Find a worker state to process
+     */
+
+    // Find glob for URL
+    var matchedGlob = findGlobMatchForUrl(Object.keys(globToWorkerState), _request.url);
+
+    // Nothing matched against this URL, so pass-through
+    if (!matchedGlob) {
+        _response.setHeader('x-glob-match', 'none');
+        return passThroughRequest(_request, _response, proxy);
+    }
+
+    // Get the worker state for this glob
+    var workerState = globToWorkerState[matchedGlob];
+
+    var request = new Request(_request);
+    console.log(_request.headers['x-service-worker-request-type'], request.url.toString());
+
+    var _responder = new _Responder(request, _response);
+    var fetchEvent = new FetchEvent(_request.headers['x-service-worker-request-type'], request, _responder);
+
+    var readyPromise = Promise.resolve();
+
+    // If we have an installed worker waiting, activate it
+    if (hasInstalledWorker(workerState)) {
+        readyPromise = activateWorker(workerState.installed.worker).then(function () {
+            swapWorkers(workerState);
+        });
+    }
+
+    // We should now have an installed and active worker.
+    readyPromise.then(function () {
+        workerState.active.worker.dispatchEvent(fetchEvent);
+        // If the worker has not called respondWith, we should go to network.
+        if (!fetchEvent._isStopped()) {
+            _responder.respondWithNetwork().catch(logError);
+        }
+    });
+}
+
+function passThroughRequest(_request, _response, proxy) {
+    var buffer = httpProxy.buffer(_request);
+    return proxy.proxyRequest(_request, _response, {
+        host: _request.headers.host.split(':')[0],
+        port: parseInt(_request.headers.host.split(':')[1], 10) || 80,
+        buffer: buffer
     });
 }
 
@@ -187,35 +186,83 @@ function startServer(port, wp) {
  * Utils
  */
 
-function readWorker() {
-    return fs.readFileSync(workerPath, { encoding: 'utf-8' });
+function findGlobMatchForUrl(globs, url) {
+    return globs.reduce(function (memo, glob) {
+        if (url.indexOf(glob) === 0 && (!memo || glob.length > memo.length)) {
+            return glob;
+        }
+        return memo;
+    }, undefined);
+}
+
+function getWorkerState(glob) {
+    return globToWorkerState[glob] ||
+                (globToWorkerState[glob] = Object.create(templateWorkerState));
+}
+
+function identicalWorker(workerA, workerB) {
+    return (workerA.file === workerB.file);
+}
+
+function hasActiveWorker(workerState) {
+    return workerState.active && workerState.active.worker;
+}
+
+function hasInstalledWorker(workerState) {
+    return workerState.installed && workerState.installed.worker;
+}
+
+function registerServiceWorker(origin, glob, workerUrl) {
+    // Trailing stars are pointless
+    glob = glob.replace(/\*$/, '');
+
+    origin = new URL(origin);
+    glob = new URL(glob);
+    workerUrl = new URL(workerUrl);
+
+    // Don't allow workers to register for origins they don't own
+    if (glob.toString().indexOf(origin.toString()) !== 0) {
+        console.log(chalk.red('Cross-origin registration rejected'));
+        console.log('%s for origin %s', glob.toString(), origin.toString());
+        return;
+    }
+
+    console.log(chalk.green('Registering: ') + '%s for %s.', workerUrl.toString(), glob.toString());
+
+    // Load, install
+    loadWorker(workerUrl)
+        .then(function (workerData) {
+            var workerState = getWorkerState(glob);
+
+            // Identical to installed worker?
+            if (hasInstalledWorker(workerState) &&
+                identicalWorker(workerState.installed, workerData)) {
+                return console.log('Ignoring – identical to installed worker.');
+            }
+
+            // Identical to active worker?
+            if (hasActiveWorker(workerState) &&
+                identicalWorker(workerState.active, workerData)) {
+                return console.log('Ignoring – identical to active worker.');
+            }
+
+            return installWorker(workerData.worker).then(function () {
+                workerState.installed = workerData;
+            });
+        })
+        .catch(logError);
 }
 
 /**
  * Load the worker file, and figure out if loading a new worker is necessary.
  * If it is, set is up and install it.
  */
-function reloadWorker() {
+function loadWorker(workerUrl) {
     // Load and compare worker files
-    var newWorkerFile = readWorker();
-    if (newWorkerFile === currentWorkerData.content) {
-        return console.log(chalk.blue('Identical workers.'));
-    }
-
-    // Try to run the worker.
-    try {
-        var newWorkerData = setupWorker(newWorkerFile);
-    } catch (e) {
-        console.error(chalk.red('Loading worker failed.'));
-        console.error(e.stack);
-        return;
-    }
-
-    // A new worker was loaded, now install it.
-    newWorkerData.isWaiting = true;
-    // FIXME: this should timeout
-    newWorkerData.installPromise = installWorker(newWorkerData);
-    nextWorkerData = newWorkerData;
+    return new ResponsePromise({ url: workerUrl }).then(function (response) {
+        var workerFile = response.body.toString();
+        return setupWorker(workerFile);
+    });
 }
 
 /**
@@ -235,29 +282,22 @@ function setupWorker(workerFile) {
         // Function body
         workerFile
     );
-    try {
-        workerFn.call(
-            // this
-            worker,
-            // Arguments
-            AsyncMap, CacheList, CacheItemList, Cache,
-            Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
-            Response, SameOriginResponse,
-            Request,
-            fetch, URL,
-            Promise,
-            fakeConsole
-        );
-    } catch(e) {
-        console.error(chalk.red('Running worker failed.'));
-        console.error(e.stack);
-        return;
-    }
-    // We now have a new worker, ready to be installed. Yum.
-    var newWorkerData = Object.create(templateWorkerData);
-    newWorkerData.worker = worker;
-    newWorkerData.content = workerFile;
-    return newWorkerData;
+    workerFn.call(
+        // this
+        worker,
+        // Arguments
+        AsyncMap, CacheList, CacheItemList, Cache,
+        Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
+        Response, SameOriginResponse,
+        Request,
+        fetch, URL,
+        Promise,
+        fakeConsole
+    );
+    return {
+        worker: worker,
+        file: workerFile
+    };
 }
 
 /**
@@ -268,12 +308,12 @@ function setupWorker(workerFile) {
          answer: yes, make the promise inside PromiseEvent and add methods
          to force resolve/reject. Or something.
  */
-function installWorker(workerData) {
+function installWorker(worker) {
     console.log('Installing...');
     var installPromise = new Promise(function (resolve, reject) {
         // Install it!
         var installEvent = new InstallEvent(resolve, reject);
-        workerData.worker.dispatchEvent(installEvent);
+        worker.dispatchEvent(installEvent);
         // If waitUntil was not called, we can assume things went swell.
         // TODO should we prevent waitUtil being called now?
         if (!installEvent._isStopped()) {
@@ -282,10 +322,9 @@ function installWorker(workerData) {
     });
     // How'd we do?
     installPromise.then(function () {
-        console.log(chalk.green('Installed worker version:'), chalk.yellow(workerData.worker.version));
-        workerData.isInstalled = true;
+        console.log(chalk.green('Installed worker version:'), chalk.yellow(worker.version));
     }, function () {
-        console.log(chalk.red('Install failed for worker version:'), chalk.yellow(workerData.worker.version));
+        console.log(chalk.red('Install failed for worker version:'), chalk.yellow(worker.version));
     });
     return installPromise;
 }
@@ -295,55 +334,33 @@ function installWorker(workerData) {
  * This occurs at the time of the first navigation after the worker was installed.
  * TODO this function and the install are very similar. Can they be abstracted?
  */
-function activateWorker(workerData) {
+function activateWorker(worker) {
     console.log('Activating...');
     var activatePromise = new Promise(function (resolve, reject) {
         // Activate it
         var activateEvent = new ActivateEvent(resolve, reject);
-        workerData.worker.dispatchEvent(activateEvent);
+        worker.dispatchEvent(activateEvent);
         if (!activateEvent._isStopped()) {
             return resolve();
         }
     });
     // How'd we do?
     activatePromise.then(function () {
-        workerData.isWaiting = false;
-        console.log(chalk.green('Activated worker version:'), chalk.yellow(workerData.worker.version));
+        console.log(chalk.green('Activated worker version:'), chalk.yellow(worker.version));
     }, function () {
-        console.log(chalk.red('Activation failed for worker version:'), chalk.yellow(workerData.worker.version));
+        console.log(chalk.red('Activation failed for worker version:'), chalk.yellow(worker.version));
     });
     return activatePromise;
 }
 
-/**
- * Activate the next worker and then swap'em!
- * TODO this is confusing. This is passed to the 'then' of the worker's install promise – what
- *      happens if it hasn't been installed?
- */
-function activateNextWorker() {
-    if (nextWorkerData.isWaiting) {
-        nextWorkerData.activatePromise = activateWorker(nextWorkerData);
-        return nextWorkerData.activatePromise.then(swapWorkers);
-    }
-}
-
-/**
- * This function (of type Function) takes no arguments. DO NOT TOUCH it is
- * auto-generated by an AbstractProxyWorkerSwapperFactoryFactoryBean; and
- * it utilizes advanced NodeScript ES7 methodologies.
- * Note: above comment is not a joke.
- * Note note: this sentence is false.
- */
-function swapWorkers() {
-    return (currentWorkerData = nextWorkerData);
+function swapWorkers(workerState) {
+    workerState.active = workerState.installed;
+    workerState.installed = null;
 }
 
 /**
  * Error handler
  */
-function genericError(why) {
-    console.error(chalk.red('ready error'), why);
-    console.error(why.stack);
+function logError(why) {
+    console.error(chalk.red(why.stack));
 }
-
-module.exports.startServer = startServer;

@@ -1,10 +1,8 @@
 var port = chrome.runtime.connect({ name: 'serviceworker-cs' });
 
 document.addEventListener('serviceworker', function (event) {
-    console.log('cs event', event);
     try {
         var data = event.detail;
-        console.log('cs data', data);
         port.postMessage(data);
     } catch (e) {
         console.error(e);
@@ -72,26 +70,28 @@ function polyfill() {
 
     connect(true);
 
+    var resolveUrl = (function () {
+        var anchor = document.createElement('a');
+        return function (url) {
+            anchor.href = url;
+            return anchor.href;
+        }
+    }());
+
     /**
      * API polyfill
      */
-    
+
     window.navigator.serviceWorker = {
         postMessage: function(msg) {
             wsSend('postMessage', msg);
         }
     };
 
-    window.navigator.registerServiceWorker = function (urlGlob, workerUrl) {
-        console.log(arguments);
-        // Fire event on the DOM. The CS-side will pick it up and inform the background page.
-        var event = new CustomEvent("serviceworker", {
-            "detail": {
-                type: 'registration',
-                args: [].slice.call(arguments)
-            }
+    window.navigator.registerServiceWorker = function (glob, workerUrl) {
+        wsSend('register', {
+            args: [window.location.origin, resolveUrl(glob), resolveUrl(workerUrl)]
         });
-        document.dispatchEvent(event);
     };
 }
 

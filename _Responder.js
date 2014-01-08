@@ -10,10 +10,9 @@ module.exports = _Responder;
 /**
  * The _Responder uses a ServiceWorker.Response to send it down a Node http.ServerResponse.
  */
-function _Responder(request, _response, requestType) {
+function _Responder(request, _response) {
     this.request = request;
     this._response = _response;
-    this.requestType = requestType;
 }
 
 _Responder.prototype.respond = function (response) {
