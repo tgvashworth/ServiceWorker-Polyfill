@@ -9,9 +9,9 @@ This is a polyfill for the [ServiceWorker](https://github.com/slightlyoff/Servic
 ### Requirements
 
 - Node + npm
-- Possibly OSX – I haven't tried on other platforms
+- Chrome Canary
 
-You'll probably need to be able host a local server and give it a different hostname than `localhost`. You could try [`distra`](https://github.com/phuu/distra) for this, but there are other ways. You could also use a remote server.
+This may only work on OSX. Sorry.
 
 ### Install
 
