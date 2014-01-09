@@ -2,6 +2,9 @@
 
 this.version = 3;
 
+importScripts('http://worker.dev/imported-script.js');
+console.log(importedVar);
+
 var caches = this.caches;
 this.addEventListener('install', function (event) {
     var cache = new Cache(

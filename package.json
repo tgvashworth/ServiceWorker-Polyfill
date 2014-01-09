@@ -7,6 +7,8 @@
     "request": "~2.29.0",
     "mime": "~1.2.11",
     "ws": "~0.4.31",
+    "falafel": "~0.3.1",
+    "lodash": "~2.2.1",
     "node-socks": "~0.1.0",
     "stream-inspect": "0.0.2",
     "argyle": "0.0.1",
