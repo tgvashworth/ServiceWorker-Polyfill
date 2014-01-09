@@ -9,7 +9,7 @@ var WebSocketServer = require('ws').Server;
 var urlLib = require('url');
 var chalk = require('chalk');
 var httpProxy = require('http-proxy');
-var astUtils = require('./ast-utils');
+var astUtils = require('./lib/astUtils');
 
 /**
   * Internal APIs
