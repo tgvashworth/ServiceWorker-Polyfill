@@ -20,6 +20,7 @@ var _ProxyRequest = require('./lib/_ProxyRequest');
 
 /**
  * DOM APIs
+ * These are (mostly) passed to the worker on execution
  */
 var ServiceWorker = require('./spec/ServiceWorker');
 
@@ -54,10 +55,6 @@ var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, met
 }, {});
 
 /**
- * Config
- */
-
-/**
  * Worker data
  */
 
@@ -71,44 +68,22 @@ module.exports.startServer = startServer;
 function startServer(port) {
 
     /**
-      * Proxy server. Pass-through unless X-For-Service-Worker header is present on the request.
+      * Proxy server
       */
-    var server = httpProxy.createServer(processRequest).listen(port);
+    var server = httpProxy.createServer(handleRequest).listen(port);
 
     /**
-     * WebSocket comes from devtools extension.
-     * It uses beforeunload events to notify the service worker when events
-     * are navigations.
+     * WebSocket is added by the extension
      */
     var wss = new WebSocketServer({ server: server });
-    // TODO only accept one connection per page
-    wss.on('connection', function (socket) {
-        // Listen up!
-        socket.on('message', function (message) {
-            // TODO guard this
-            try {
-                var data = JSON.parse(message);
-            } catch (e) {
-                return logError(e);
-            }
-
-            if (data.type === 'register') {
-                registerServiceWorker.apply(null, data.data.args);
-            }
-
-            if (data.type === 'postMessage') {
-                return workerRegistry.postMessageWorker.apply(workerRegistry, data.data.args);
-            }
-        });
-        socket.on('close', function (message) {});
-    });
+    wss.on('connection', handleWebSocket);
 }
 
 /**
  * Request processors
  */
 
-function processRequest(_request, _response, proxy) {
+function handleRequest(_request, _response, proxy) {
     // Ignore requests without the X-For-Service-Worker header
     // if (typeof _request.headers['x-for-service-worker'] === 'undefined') {
     //     return passThroughRequest(_request, _response, proxy);
@@ -184,10 +159,34 @@ function passThroughRequest(_request, _response, proxy) {
     });
 }
 
+function handleWebSocket(socket) {
+    // Listen up!
+    socket.on('message', function (message) {
+        // TODO guard this
+        try {
+            var data = JSON.parse(message);
+        } catch (e) {
+            return logError(e);
+        }
+
+        if (data.type === 'register') {
+            registerServiceWorker.apply(null, data.data.args);
+        }
+
+        if (data.type === 'postMessage') {
+            return workerRegistry.postMessageWorker.apply(workerRegistry, data.data.args);
+        }
+    });
+    socket.on('close', function (message) {});
+}
+
 /**
  * Utils
  */
 
+/**
+ * Handles navigator.registerServiceWorker(...)
+ */
 function registerServiceWorker(origin, glob, workerUrl) {
     // Trailing stars are pointless
     glob = glob.replace(/\*$/, '');
@@ -224,8 +223,8 @@ function registerServiceWorker(origin, glob, workerUrl) {
 
     console.log(chalk.green('Registering: ') + '%s for %s.', workerUrl.toString(), glob.toString());
 
-    // Load, install
     return loadWorker(workerUrl)
+        // Compare the worker file to the existing, loaded workers
         .then(function (workerFile) {
             var workerRegistration = workerRegistry.getRegistrationFromUrl(workerUrl);
 
@@ -233,18 +232,22 @@ function registerServiceWorker(origin, glob, workerUrl) {
                 // Identical to installed worker?
                 if (workerRegistration.hasInstalledWorker() &&
                     _WorkerRegistry.identicalWorker(workerRegistration.installed, workerFile)) {
-                    throw new Error('Ignoring new worker – identical to installed worker.');
+                    console.log(chalk.red('Ignoring new worker – identical to installed worker.'));
+                    return Promise.reject();
                 }
 
                 // Identical to active worker?
                 if (workerRegistration.hasActiveWorker &&
                     _WorkerRegistry.identicalWorker(workerRegistration.active, workerFile)) {
-                    throw new Error('Ignoring new worker – identical to active worker.');
+                    console.log(chalk.red('Ignoring new worker – identical to active worker.'));
+                    return Promise.reject();
                 }
             }
 
+            // We're all good, so setup (execute) the worker
             return setupWorker(workerFile, workerUrl, glob, origin);
         })
+        // We have an executed worker, so now install it
         .then(function (workerData) {
             var workerRegistration = workerRegistry.getOrCreateRegistration(workerUrl, glob);
             return installWorker(workerData.worker).then(function () {
@@ -256,8 +259,7 @@ function registerServiceWorker(origin, glob, workerUrl) {
 }
 
 /**
- * Load the worker file, and figure out if loading a new worker is necessary.
- * If it is, set is up and install it.
+ * Load the worker file across the network
  */
 function loadWorker(workerUrl) {
     // Load and compare worker files
