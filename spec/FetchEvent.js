@@ -19,6 +19,10 @@ function FetchEvent(type, request, _responder) {
 }
 
 FetchEvent.prototype.respondWith = function (response) {
+    if (this._isStopped()) {
+        throw new Error('respondWith() can only be called once per fetch event');
+    }
+
     if (!_instanceOf(response, Response) && !_instanceOf(response, Promise)) {
         throw new TypeError('respondWith requires a Reponse or a Promise');
     }
