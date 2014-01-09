@@ -49,7 +49,7 @@ FetchEvent.prototype.forwardTo = function(url) {
     return this.respondWith(
         new Response({
             statusCode: 302,
-            headers: { "Location": url.toString() }
+            headers: { 'Location': url.toString() }
         })
     );
 }
