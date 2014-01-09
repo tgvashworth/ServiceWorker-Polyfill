@@ -298,10 +298,14 @@ function setupWorker(workerFile, workerUrl, glob, origin) {
         Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
         Response, SameOriginResponse,
         Request,
-        fetch, URL, importScripts,
+        fetch, URL, importer,
         Promise,
         fakeConsole
     );
+
+    // Now the worker has been setup. Don't allow importScripts to be called again.
+    importer.disable();
+
     return {
         worker: worker,
         file: workerFile
