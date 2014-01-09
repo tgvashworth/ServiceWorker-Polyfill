@@ -11,8 +11,7 @@ module.exports = function () {
 		}
 
 		if (disabled === true) {
-			console.log('You cannot call importScripts outside of initial setup.');
-			throw 'You cannot call importScripts outside of initial setup.';
+			throw new Error('You cannot call importScripts outside of initial setup.');
 		}
 
 		var urls = Array.prototype.slice.call(arguments, 0).filter(function(arg) {
@@ -20,7 +19,7 @@ module.exports = function () {
 		});
 
 		// Sync get each URL and return as one string to be eval'd.
-		// This requests are done in series. TODO: Possibly solve?
+		// These requests are done in series. TODO: Possibly solve?
 		return urls.map(function(url) {
 			var xhr = new XMLHttpRequest();
 			xhr.open('GET', url, false);
