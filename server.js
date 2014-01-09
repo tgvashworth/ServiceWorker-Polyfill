@@ -226,21 +226,27 @@ function registerServiceWorker(origin, glob, workerUrl) {
 
     // Load, install
     return loadWorker(workerUrl)
+        .then(function (workerFile) {
+            var workerRegistration = workerRegistry.getRegistrationFromUrl(workerUrl);
+
+            if (workerRegistration) {
+                // Identical to installed worker?
+                if (workerRegistration.hasInstalledWorker() &&
+                    _WorkerRegistry.identicalWorker(workerRegistration.installed, workerFile)) {
+                    throw new Error('Ignoring new worker – identical to installed worker.');
+                }
+
+                // Identical to active worker?
+                if (workerRegistration.hasActiveWorker &&
+                    _WorkerRegistry.identicalWorker(workerRegistration.active, workerFile)) {
+                    throw new Error('Ignoring new worker – identical to active worker.');
+                }
+            }
+
+            return setupWorker(workerFile, workerUrl, glob, origin);
+        })
         .then(function (workerData) {
             var workerRegistration = workerRegistry.getOrCreateRegistration(workerUrl, glob);
-
-            // Identical to installed worker?
-            if (workerRegistration.hasInstalledWorker() &&
-                _WorkerRegistry.identicalWorker(workerRegistration.installed, workerData)) {
-                return console.log('Ignoring – identical to installed worker.');
-            }
-
-            // Identical to active worker?
-            if (workerRegistration.hasActiveWorker &&
-                _WorkerRegistry.identicalWorker(workerRegistration.active, workerData)) {
-                return console.log('Ignoring – identical to active worker.');
-            }
-
             return installWorker(workerData.worker).then(function () {
                 workerRegistration.installed = workerData;
                 return workerRegistration;
@@ -256,16 +262,15 @@ function registerServiceWorker(origin, glob, workerUrl) {
 function loadWorker(workerUrl) {
     // Load and compare worker files
     return new ResponsePromise({ url: workerUrl }).then(function (response) {
-        var workerFile = response.body.toString();
-        return setupWorker(workerFile);
+        return response.body.toString();
     });
 }
 
 /**
  * Eval the worker in a new ServiceWorker context with all the trimmings, via new Function.
  */
-function setupWorker(workerFile) {
-    var worker = new ServiceWorker(_messenger);
+function setupWorker(workerFile, workerUrl, glob, origin) {
+    var worker = new ServiceWorker();
     var workerFn = new Function(
         // Argument names
         'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
