@@ -220,9 +220,28 @@ function registerServiceWorker(origin, glob, workerUrl) {
     glob = new URL(glob);
     workerUrl = new URL(workerUrl);
 
+    // Don't allow workers to register for cross-protocol globs
+    if (glob.protocol !== origin.protocol) {
+        console.log(chalk.red('Registration rejected: glob and origin protocols do not match.'));
+        return;
+    }
+
+    // Don't allow cross-protocol workers
+    if (origin.protocol !== workerUrl.protocol) {
+        console.log(chalk.red('Registration rejected: worker and origin protocols do not match.'));
+        return;
+    }
+
     // Don't allow workers to register for origins they don't own
-    if (glob.toString().indexOf(origin.toString()) !== 0) {
-        console.log(chalk.red('Cross-origin registration rejected'));
+    if (glob.host.indexOf(origin.host) !== 0) {
+        console.log(chalk.red('Registration rejected: worker trying to register for an origin it does not own.'));
+        console.log('%s for origin %s', glob.toString(), origin.toString());
+        return;
+    }
+
+    // Don't allow cross-origin workers
+    if (origin.host.indexOf(workerUrl.host) !== 0) {
+        console.log(chalk.red('Registration rejected: cross-origin worker not allowed.'));
         console.log('%s for origin %s', glob.toString(), origin.toString());
         return;
     }
