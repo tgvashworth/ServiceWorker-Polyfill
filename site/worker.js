@@ -5,7 +5,8 @@ this.version = 3;
 var caches = this.caches;
 this.addEventListener('install', function (event) {
     var cache = new Cache(
-        new URL('assets/app.3.js', 'http://demosite.dev')
+        new URL('assets/app.3.js', 'http://demosite.dev'),
+        new URL('http://pbs.twimg.com/profile_images/1188958802/image_normal.jpg')
     );
     caches.set('cache', cache);
     event.waitUntil(

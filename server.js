@@ -126,13 +126,20 @@ function processRequest(_request, _response, proxy) {
     // delete _request.headers['x-for-service-worker'];
     _response.setHeader('x-meddled-with', true);
 
+    var request = new Request(_request);
 
-    /**
-     * Find a worker state to process
-     */
+    var urlToMatch = request.url;
+    if (request.headers['x-service-worker-request-type'] === 'fetch') {
+        // No referer header, not much we can do
+        if (!request.headers.referer) {
+            console.error('No referer header:', request.url);
+            return passThroughRequest(_request, _response, proxy);
+        }
+        urlToMatch = new URL(request.headers.referer);
+    }
 
     // Find glob for URL
-    var matchedGlob = findGlobMatchForUrl(Object.keys(globToWorkerState), _request.url);
+    var matchedGlob = findGlobMatchForUrl(Object.keys(globToWorkerState), urlToMatch.toString());
 
     // Nothing matched against this URL, so pass-through
     if (!matchedGlob) {
@@ -143,7 +150,6 @@ function processRequest(_request, _response, proxy) {
     // Get the worker state for this glob
     var workerState = globToWorkerState[matchedGlob];
 
-    var request = new Request(_request);
     console.log(_request.headers['x-service-worker-request-type'], request.url.toString());
 
     var _responder = new _Responder(request, _response);
