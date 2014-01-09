@@ -5,6 +5,7 @@ var Event = require('../spec/Event');
 var Response = require('../spec/Response');
 var SameOriginResponse = require('../spec/SameOriginResponse');
 var Promise = require('rsvp').Promise;
+var URL = require('dom-urls');
 util.inherits(FetchEvent, Event);
 
 module.exports = FetchEvent;
@@ -39,3 +40,16 @@ FetchEvent.prototype.respondWith = function (response) {
         throw why;
     });
 };
+
+FetchEvent.prototype.forwardTo = function(url) {
+    if (typeof url !== 'string' && !(url instanceof URL)) {
+        throw new TypeError('forwardTo requires a string or a URL');
+    }
+
+    return this.respondWith(
+        new Response({
+            statusCode: 302,
+            headers: { "Location": url.toString() }
+        })
+    );
+}
