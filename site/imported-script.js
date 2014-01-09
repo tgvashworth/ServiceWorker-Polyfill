@@ -1,1 +1,0 @@
-var importedVar = 'var from imported script';

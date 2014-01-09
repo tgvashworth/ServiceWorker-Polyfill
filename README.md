@@ -23,7 +23,9 @@ $ npm install -g serviceworker && serviceworker
 
 This will start an instance of Chrome Canary and a ServiceWorker proxy server. All requests from Canary will go through the proxy.
 
-Point Canary to a (local) site, add some ServiceWorker stuff and off you go! If you'd like a site to play with, try the one in `site`. It even comes with a worker!
+Point Canary to a (local) site, add some ServiceWorker stuff and off you go!
+
+If you'd like a site to play with, try using the demo site in the `site` directory. You'll need to host the files with the domain `workerdemo.dev` – try using [distra](https://github.com/phuu/distra) for this.
 
 ### Architecture
 
