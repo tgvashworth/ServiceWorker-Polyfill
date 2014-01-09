@@ -4,10 +4,12 @@
 
 var http = require('http');
 var fs = require('fs');
+var falafel = require('falafel');
 var WebSocketServer = require('ws').Server;
 var urlLib = require('url');
 var chalk = require('chalk');
 var httpProxy = require('http-proxy');
+var astUtils = require('./ast-utils');
 
 /**
   * Internal APIs
@@ -34,6 +36,7 @@ var CacheItemList = require('./spec/CacheItemList');
 var Cache = require('./spec/Cache');
 
 var fetch = require('./spec/fetch');
+var importScripts = require('./spec/importScripts');
 
 var ResponsePromise = require('./spec/ResponsePromise');
 var Response = require('./spec/Response');
@@ -273,17 +276,19 @@ function loadWorker(workerUrl) {
  */
 function setupWorker(workerFile, workerUrl, glob, origin) {
     var worker = new ServiceWorker();
+    var importer = importScripts(workerUrl);
+    var expandedWorkerBody = expandWorkerFile(workerFile);
     var workerFn = new Function(
         // Argument names
         'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
         'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent', 'MessageEvent',
         'Response', 'SameOriginResponse',
         'Request',
-        'fetch', 'URL',
+        'fetch', 'URL', 'importScripts',
         'Promise',
         'console', // teehee
         // Function body
-        workerFile
+        expandedWorkerBody
     );
     workerFn.call(
         // this
@@ -293,7 +298,7 @@ function setupWorker(workerFile, workerUrl, glob, origin) {
         Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
         Response, SameOriginResponse,
         Request,
-        fetch, URL,
+        fetch, URL, importScripts,
         Promise,
         fakeConsole
     );
@@ -301,6 +306,16 @@ function setupWorker(workerFile, workerUrl, glob, origin) {
         worker: worker,
         file: workerFile
     };
+}
+
+function expandWorkerFile(workerBody) {
+    var expandedWorkerBody = falafel(workerBody, function(node) {
+        if (astUtils.isCallTo(node, 'importScripts')) {
+            // TODO: Ensure this is only called in initial execution context, ie. not in event handler.
+            node.update('eval(' + node.source() + ')');
+        }
+    });
+    return expandedWorkerBody;
 }
 
 /**
