@@ -17,9 +17,6 @@ var _WorkerRegistration = require('./lib/_WorkerRegistration');
 var _Requester = require('./lib/_Requester');
 var _Responder = require('./lib/_Responder');
 var _ProxyRequest = require('./lib/_ProxyRequest');
-// Messenger is a singleton given to all ServiceWorkers for to postMessage it up.
-var _Messenger = require('./lib/_Messenger');
-var _messenger = new _Messenger();
 
 /**
  * DOM APIs
@@ -85,24 +82,25 @@ function startServer(port) {
      */
     var wss = new WebSocketServer({ server: server });
     // TODO only accept one connection per page
-    wss.on('connection', function (ws) {
-        _messenger.add(ws);
+    wss.on('connection', function (socket) {
         // Listen up!
-        ws.on('message', function (message) {
+        socket.on('message', function (message) {
             // TODO guard this
-            var data = JSON.parse(message);
+            try {
+                var data = JSON.parse(message);
+            } catch (e) {
+                return logError(e);
+            }
 
             if (data.type === 'register') {
-                return registerServiceWorker.apply(null, data.data.args);
+                registerServiceWorker.apply(null, data.data.args);
             }
 
             if (data.type === 'postMessage') {
-                return postMessageWorker.apply(null, data.data.args);
+                return workerRegistry.postMessageWorker.apply(workerRegistry, data.data.args);
             }
         });
-        ws.on('close', function (message) {
-            _messenger.remove(ws);
-        });
+        socket.on('close', function (message) {});
     });
 }
 
@@ -190,18 +188,6 @@ function passThroughRequest(_request, _response, proxy) {
  * Utils
  */
 
-function postMessageWorker(msg, pageUrl) {
-    pageUrl = new URL(pageUrl);
-    pageUrl.hash = '';
-    var workerRegistration = workerRegistry.getRegistrationFromUrl(pageUrl);
-    if (!workerRegistration || !workerRegistration.hasActiveWorker()) {
-        return console.log('No worker state for the postMessage-ing page.');
-    }
-    // Fake the origin. TODO this should be better
-    var messageEvent = new MessageEvent(msg, pageUrl.protocol + '//' + pageUrl.host);
-    workerRegistration.active.worker.dispatchEvent(messageEvent);
-}
-
 function registerServiceWorker(origin, glob, workerUrl) {
     // Trailing stars are pointless
     glob = glob.replace(/\*$/, '');
@@ -213,33 +199,33 @@ function registerServiceWorker(origin, glob, workerUrl) {
     // Don't allow workers to register for cross-protocol globs
     if (glob.protocol !== origin.protocol) {
         console.log(chalk.red('Registration rejected: glob and origin protocols do not match.'));
-        return;
+        return Promise.reject();
     }
 
     // Don't allow cross-protocol workers
     if (origin.protocol !== workerUrl.protocol) {
         console.log(chalk.red('Registration rejected: worker and origin protocols do not match.'));
-        return;
+        return Promise.reject();
     }
 
     // Don't allow workers to register for origins they don't own
     if (glob.host.indexOf(origin.host) !== 0) {
         console.log(chalk.red('Registration rejected: worker trying to register for an origin it does not own.'));
         console.log('%s for origin %s', glob.toString(), origin.toString());
-        return;
+        return Promise.reject();
     }
 
     // Don't allow cross-origin workers
     if (origin.host.indexOf(workerUrl.host) !== 0) {
         console.log(chalk.red('Registration rejected: cross-origin worker not allowed.'));
         console.log('%s for origin %s', glob.toString(), origin.toString());
-        return;
+        return Promise.reject();
     }
 
     console.log(chalk.green('Registering: ') + '%s for %s.', workerUrl.toString(), glob.toString());
 
     // Load, install
-    loadWorker(workerUrl)
+    return loadWorker(workerUrl)
         .then(function (workerData) {
             var workerRegistration = workerRegistry.getOrCreateRegistration(workerUrl, glob);
 
@@ -257,6 +243,7 @@ function registerServiceWorker(origin, glob, workerUrl) {
 
             return installWorker(workerData.worker).then(function () {
                 workerRegistration.installed = workerData;
+                return workerRegistration;
             });
         })
         .catch(logError);

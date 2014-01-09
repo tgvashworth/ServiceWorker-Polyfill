@@ -3,9 +3,8 @@ var CacheList = require('../spec/CacheList');
 
 module.exports = ServiceWorker;
 
-function ServiceWorker(_messenger) {
+function ServiceWorker() {
     hide(this, '_eventListeners', []);
-    hide(this, '_messenger', _messenger);
     this.version = 0;
     this.caches = new CacheList();
 }
@@ -33,12 +32,4 @@ ServiceWorker.prototype.dispatchEvent = function (event) {
         listener.call(this, event);
         return event._isStopped();
     }.bind(this));
-};
-
-/**
- * Messaging
- */
-
-ServiceWorker.prototype.postMessage = function (data) {
-    this._messenger.postMessage(data);
 };
