@@ -126,7 +126,7 @@ function processRequest(_request, _response, proxy) {
     if (request.headers['x-service-worker-request-type'] === 'fetch') {
         // No referer header, not much we can do
         if (!request.headers.referer) {
-            console.error('No referer header:', request.url);
+            console.error('No referer header:', request.url.toString());
             return passThroughRequest(_request, _response, proxy);
         }
         urlToMatch = new URL(request.headers.referer);

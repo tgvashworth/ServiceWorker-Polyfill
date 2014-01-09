@@ -7,7 +7,6 @@ var argv = require('optimist').argv;
 
 
 var proxyPort = argv.port || 5678;
-var workerPath = argv.worker || "worker.js";
 var browser = argv.browser;
 var browserOnly = argv['browser-only'];
 
@@ -34,5 +33,5 @@ Promise.resolve().then(function() {
     if (browserOnly) { // as in --browser-only
         return;
     }
-    startServer(proxyPort, workerPath);
+    startServer(proxyPort);
 });

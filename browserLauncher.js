@@ -17,10 +17,10 @@ function ask(question, opts) {
             input: process.stdin,
             output: process.stdout
         });
-        
+
         rl.question(question + ' ', function(answer) {
             rl.close();
-            
+
             if (opts.process) {
                 answer = opts.process(answer);
             }
@@ -52,7 +52,7 @@ module.exports = function browserLauncher(chromiumPath, proxyPort) {
     }).then(function(chromiumPath) {
         var process = spawn(chromiumPath, [
             "--proxy-server=http=localhost:" + Number(proxyPort),
-            "--load-extension=" + path.join(__dirname, "devtools")
+            "--load-extension=" + path.join(__dirname, "extension")
         ]);
 
         return new Promise(function(resolve, reject) {
@@ -70,7 +70,7 @@ module.exports = function browserLauncher(chromiumPath, proxyPort) {
                     reject(Error("Cannot start \""+ chromiumPath +"\", ensure it isn't already running, and try again"));
                 }
             });
-            
+
             setTimeout(function() {
                 resolve(process);
             }, 1000); // assuming everything's ok after a second. Yeah, I know.
