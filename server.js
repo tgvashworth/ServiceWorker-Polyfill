@@ -49,7 +49,7 @@ var MessageEvent = require('./MessageEvent');
 var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, method) {
     memo[method] = console[method];
     if (typeof console[method] === "function") {
-        memo[method] = memo[method].bind(console, 'sw:');
+        memo[method] = memo[method].bind(console, chalk.blue('sw:'));
     }
     return memo;
 }, {});
@@ -102,7 +102,6 @@ function startServer(port) {
             }
 
             if (data.type === 'postMessage') {
-                console.log('postMessage in:', data);
                 return postMessageWorker.apply(null, data.data.args);
             }
         });
