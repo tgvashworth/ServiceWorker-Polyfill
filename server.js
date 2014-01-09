@@ -98,18 +98,13 @@ function startServer(port) {
             var data = JSON.parse(message);
 
             if (data.type === 'register') {
-                registerServiceWorker.apply(null, data.data.args);
+                return registerServiceWorker.apply(null, data.data.args);
             }
 
-            // if (data.type === 'postMessage') {
-            //     console.log('postMessage in:', data.data);
-            //     var messageEvent = new MessageEvent(data.data);
-            //     // We can only message an activated worker
-            //     if (!currentWorkerData.activatePromise) return;
-            //     currentWorkerData.activatePromise.then(function () {
-            //         currentWorkerData.worker.dispatchEvent(messageEvent);
-            //     });
-            // }
+            if (data.type === 'postMessage') {
+                console.log('postMessage in:', data);
+                return postMessageWorker.apply(null, data.data.args);
+            }
         });
         ws.on('close', function (message) {
             _messenger.remove(ws);
@@ -186,6 +181,12 @@ function passThroughRequest(_request, _response, proxy) {
  * Utils
  */
 
+function getWorkerStateFromUrl(url) {
+    var matchedGlob = findGlobMatchForUrl(Object.keys(globToWorkerState), url);
+    if (!matchedGlob) return null;
+    return getWorkerState(matchedGlob);
+}
+
 function findGlobMatchForUrl(globs, url) {
     return globs.reduce(function (memo, glob) {
         if (url.indexOf(glob) === 0 && (!memo || glob.length > memo.length)) {
@@ -210,6 +211,18 @@ function hasActiveWorker(workerState) {
 
 function hasInstalledWorker(workerState) {
     return workerState.installed && workerState.installed.worker;
+}
+
+function postMessageWorker(msg, pageUrl) {
+    pageUrl = new URL(pageUrl);
+    pageUrl.hash = '';
+    var workerState = getWorkerStateFromUrl(pageUrl.toString());
+    if (!workerState || !hasActiveWorker(workerState)) {
+        return console.log('No worker state for the postMessage-ing page.');
+    }
+    // Fake the origin. TODO this should be better
+    var messageEvent = new MessageEvent(msg, pageUrl.protocol + '//' + pageUrl.host);
+    workerState.active.worker.dispatchEvent(messageEvent);
 }
 
 function registerServiceWorker(origin, glob, workerUrl) {

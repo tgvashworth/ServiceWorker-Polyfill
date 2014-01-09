@@ -1,6 +1,6 @@
 // Worker!
 
-this.version = 1;
+this.version = 3;
 
 var caches = this.caches;
 this.addEventListener('install', function (event) {
@@ -16,7 +16,10 @@ this.addEventListener('install', function (event) {
 this.addEventListener('fetch', function (event) {
     console.log('event.request.url', event.request.url.toString());
     event.respondWith(
-        caches.match(event.request.url).then(null, function () {
+        caches.match(event.request.url).then(function (response) {
+            console.log('response', response);
+            return response;
+        }, function () {
             return fetch(event.request.url);
         })
     );

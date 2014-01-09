@@ -9,7 +9,8 @@ util.inherits(MessageEvent, Event);
 
 module.exports = MessageEvent;
 
-function MessageEvent(data) {
+function MessageEvent(data, origin) {
     Event.call(this, 'message');
     this.data = data;
+    this.origin = origin;
 }

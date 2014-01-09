@@ -68,6 +68,12 @@ function polyfill() {
         }));
     }
 
+    function callRemote(method /* ... args*/) {
+        wsSend(method, {
+            args: [].slice.call(arguments, 1)
+        });
+    }
+
     connect(true);
 
     var resolveUrl = (function () {
@@ -84,14 +90,12 @@ function polyfill() {
 
     window.navigator.serviceWorker = {
         postMessage: function(msg) {
-            wsSend('postMessage', msg);
+            callRemote('postMessage', msg, window.location.toString());
         }
     };
 
     window.navigator.registerServiceWorker = function (glob, workerUrl) {
-        wsSend('register', {
-            args: [window.location.origin, resolveUrl(glob), resolveUrl(workerUrl)]
-        });
+        callRemote('register', window.location.origin, resolveUrl(glob), resolveUrl(workerUrl));
     };
 }
 
