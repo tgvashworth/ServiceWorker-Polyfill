@@ -1,5 +1,5 @@
 var util = require('util');
-var PromiseEvent = require('./PromiseEvent');
+var PromiseEvent = require('../spec/PromiseEvent');
 
 util.inherits(ActivateEvent, PromiseEvent);
 module.exports = ActivateEvent;

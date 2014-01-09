@@ -1,5 +1,5 @@
 var util = require('util');
-var AsyncMap = require('./AsyncMap');
+var AsyncMap = require('../spec/AsyncMap');
 var Promise = require('rsvp').Promise;
 util.inherits(CacheList, AsyncMap);
 

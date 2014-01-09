@@ -1,6 +1,6 @@
 var util = require('util');
 var Promise = require('rsvp').Promise;
-var Event = require('./Event');
+var Event = require('../spec/Event');
 var hide = require('hide-key');
 
 util.inherits(PromiseEvent, Event);

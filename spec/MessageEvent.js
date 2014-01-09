@@ -1,9 +1,9 @@
 var util = require('util');
 var hide = require('hide-key');
-var _instanceOf = require('./_instanceOf');
-var Event = require('./Event');
-var Response = require('./Response');
-var SameOriginResponse = require('./SameOriginResponse');
+var _instanceOf = require('../lib/_instanceOf');
+var Event = require('../spec/Event');
+var Response = require('../spec/Response');
+var SameOriginResponse = require('../spec/SameOriginResponse');
 var Promise = require('rsvp').Promise;
 util.inherits(MessageEvent, Event);
 

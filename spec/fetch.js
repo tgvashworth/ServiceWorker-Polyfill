@@ -1,6 +1,6 @@
-var ResponsePromise = require('./ResponsePromise');
-var _instanceOf = require('./_instanceOf');
-var Request = require('./Request');
+var ResponsePromise = require('../spec/ResponsePromise');
+var _instanceOf = require('../lib/_instanceOf');
+var Request = require('../spec/Request');
 var URL = require('dom-urls');
 
 module.exports = function (url) {

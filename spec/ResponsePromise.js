@@ -1,7 +1,7 @@
-var _Requester = require('./_Requester');
+var _Requester = require('../lib/_Requester');
 var Promise = require('rsvp').Promise;
-var Response = require('./Response');
-var Request = require('./Request');
+var Response = require('../spec/Response');
+var Request = require('../spec/Request');
 var URL = require('dom-urls');
 
 module.exports = ResponsePromise;

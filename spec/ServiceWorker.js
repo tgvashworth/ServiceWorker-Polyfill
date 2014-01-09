@@ -1,5 +1,5 @@
 var hide = require('hide-key');
-var CacheList = require('./CacheList');
+var CacheList = require('../spec/CacheList');
 
 module.exports = ServiceWorker;
 

@@ -1,5 +1,5 @@
 var util = require('util');
-var CacheList = require('./CacheList');
+var CacheList = require('../spec/CacheList');
 util.inherits(CacheItemList, CacheList);
 
 module.exports = CacheItemList;

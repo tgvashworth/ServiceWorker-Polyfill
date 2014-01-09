@@ -12,41 +12,41 @@ var httpProxy = require('http-proxy');
 /**
   * Internal APIs
   */
-var _WorkerRegistry = require('./_WorkerRegistry');
-var _WorkerRegistration = require('./_WorkerRegistration');
-var _Requester = require('./_Requester');
-var _Responder = require('./_Responder');
-var _ProxyRequest = require('./_ProxyRequest');
+var _WorkerRegistry = require('./lib/_WorkerRegistry');
+var _WorkerRegistration = require('./lib/_WorkerRegistration');
+var _Requester = require('./lib/_Requester');
+var _Responder = require('./lib/_Responder');
+var _ProxyRequest = require('./lib/_ProxyRequest');
 // Messenger is a singleton given to all ServiceWorkers for to postMessage it up.
-var _Messenger = require('./_Messenger');
+var _Messenger = require('./lib/_Messenger');
 var _messenger = new _Messenger();
 
 /**
  * DOM APIs
  */
-var ServiceWorker = require('./ServiceWorker');
+var ServiceWorker = require('./spec/ServiceWorker');
 
 var Promise = require('rsvp').Promise;
 
 var URL = require('dom-urls');
 
-var AsyncMap = require('./AsyncMap');
-var CacheList = require('./CacheList');
-var CacheItemList = require('./CacheItemList');
-var Cache = require('./Cache');
+var AsyncMap = require('./spec/AsyncMap');
+var CacheList = require('./spec/CacheList');
+var CacheItemList = require('./spec/CacheItemList');
+var Cache = require('./spec/Cache');
 
-var fetch = require('./fetch');
+var fetch = require('./spec/fetch');
 
-var ResponsePromise = require('./ResponsePromise');
-var Response = require('./Response');
-var SameOriginResponse = require('./SameOriginResponse');
-var Request = require('./Request');
+var ResponsePromise = require('./spec/ResponsePromise');
+var Response = require('./spec/Response');
+var SameOriginResponse = require('./spec/SameOriginResponse');
+var Request = require('./spec/Request');
 
-var Event = require('./Event');
-var InstallEvent = require('./InstallEvent');
-var FetchEvent = require('./FetchEvent');
-var ActivateEvent = require('./ActivateEvent');
-var MessageEvent = require('./MessageEvent');
+var Event = require('./spec/Event');
+var InstallEvent = require('./spec/InstallEvent');
+var FetchEvent = require('./spec/FetchEvent');
+var ActivateEvent = require('./spec/ActivateEvent');
+var MessageEvent = require('./spec/MessageEvent');
 
 var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, method) {
     memo[method] = console[method];
