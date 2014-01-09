@@ -1,8 +1,8 @@
 {
-  "name": "serviceworker-demo",
+  "name": "serviceworker",
   "version": "0.0.0",
-  "description": "",
-  "main": "Event.js",
+  "description": "Prototype implementation and polyfill for the ServiceWorker spec.",
+  "preferGlobal": true,
   "dependencies": {
     "request": "~2.29.0",
     "mime": "~1.2.11",
@@ -20,8 +20,16 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node index.js"
   },
-  "author": "",
-  "license": "BSD-2-Clause"
+  "bin": {
+    "serviceworker": "index.js"
+  },
+  "author": "Tom Ashworth <ta@twitter.com>",
+  "contributors": [
+    "Jake Archibald",
+    "Andy Hume",
+    "Pascal Hartig"
+  ],
+  "license": "MIT"
 }

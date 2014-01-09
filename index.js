@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var Promise = require('rsvp').Promise;
 var browserLauncher = require('./browserLauncher');
 var startServer = require('./server').startServer;
