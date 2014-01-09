@@ -12,6 +12,8 @@ var httpProxy = require('http-proxy');
 /**
   * Internal APIs
   */
+var _WorkerRegistry = require('./_WorkerRegistry');
+var _WorkerRegistration = require('./_WorkerRegistration');
 var _Requester = require('./_Requester');
 var _Responder = require('./_Responder');
 var _ProxyRequest = require('./_ProxyRequest');
@@ -62,14 +64,7 @@ var fakeConsole = Object.getOwnPropertyNames(console).reduce(function (memo, met
  * Worker data
  */
 
-var templateWorkerState = {
-    worker: null,
-    content: '',
-    installing: {},
-    active: {}
-};
-
-var globToWorkerState = {};
+var workerRegistry = new _WorkerRegistry();
 
 /** ================================================================================================
  * Go, go, go.
@@ -138,7 +133,7 @@ function processRequest(_request, _response, proxy) {
     }
 
     // Find glob for URL
-    var matchedGlob = findGlobMatchForUrl(Object.keys(globToWorkerState), urlToMatch.toString());
+    var matchedGlob = workerRegistry.findGlobMatchForUrl(urlToMatch);
 
     // Nothing matched against this URL, so pass-through
     if (!matchedGlob) {
@@ -147,7 +142,14 @@ function processRequest(_request, _response, proxy) {
     }
 
     // Get the worker state for this glob
-    var workerState = globToWorkerState[matchedGlob];
+    var workerRegistration = workerRegistry.getRegistrationFromUrl(urlToMatch);
+
+    // A glob matched, but no registration was found. wat.
+    if (!workerRegistration) {
+        _response.setHeader('x-worker-registration', 'none');
+        _response.setHeader('x-wat', 'indeed');
+        return passThroughRequest(_request, _response, proxy);
+    }
 
     console.log(_request.headers['x-service-worker-request-type'], request.url.toString());
 
@@ -157,20 +159,22 @@ function processRequest(_request, _response, proxy) {
     var readyPromise = Promise.resolve();
 
     // If we have an installed worker waiting, activate it
-    if (hasInstalledWorker(workerState)) {
-        readyPromise = activateWorker(workerState.installed.worker).then(function () {
-            swapWorkers(workerState);
-        });
+    if (workerRegistration.hasInstalledWorker()) {
+        console.log('activating worker');
+        readyPromise = activateWorker(workerRegistration.installed.worker)
+            .then(workerRegistration.activateInstalledWorker.bind(workerRegistration));
     }
 
     // We should now have an installed and active worker.
-    readyPromise.then(function () {
-        workerState.active.worker.dispatchEvent(fetchEvent);
-        // If the worker has not called respondWith, we should go to network.
-        if (!fetchEvent._isStopped()) {
-            _responder.respondWithNetwork().catch(logError);
-        }
-    });
+    readyPromise
+        .then(function () {
+            workerRegistration.active.worker.dispatchEvent(fetchEvent);
+            // If the worker has not called respondWith, we should go to network.
+            if (!fetchEvent._isStopped()) {
+                _responder.respondWithNetwork().catch(logError);
+            }
+        })
+        .catch(logError)
 }
 
 function passThroughRequest(_request, _response, proxy) {
@@ -186,48 +190,16 @@ function passThroughRequest(_request, _response, proxy) {
  * Utils
  */
 
-function getWorkerStateFromUrl(url) {
-    var matchedGlob = findGlobMatchForUrl(Object.keys(globToWorkerState), url);
-    if (!matchedGlob) return null;
-    return getWorkerState(matchedGlob);
-}
-
-function findGlobMatchForUrl(globs, url) {
-    return globs.reduce(function (memo, glob) {
-        if (url.indexOf(glob) === 0 && (!memo || glob.length > memo.length)) {
-            return glob;
-        }
-        return memo;
-    }, undefined);
-}
-
-function getWorkerState(glob) {
-    return globToWorkerState[glob] ||
-                (globToWorkerState[glob] = Object.create(templateWorkerState));
-}
-
-function identicalWorker(workerA, workerB) {
-    return (workerA.file === workerB.file);
-}
-
-function hasActiveWorker(workerState) {
-    return workerState.active && workerState.active.worker;
-}
-
-function hasInstalledWorker(workerState) {
-    return workerState.installed && workerState.installed.worker;
-}
-
 function postMessageWorker(msg, pageUrl) {
     pageUrl = new URL(pageUrl);
     pageUrl.hash = '';
-    var workerState = getWorkerStateFromUrl(pageUrl.toString());
-    if (!workerState || !hasActiveWorker(workerState)) {
+    var workerRegistration = workerRegistry.getRegistrationFromUrl(pageUrl);
+    if (!workerRegistration || !workerRegistration.hasActiveWorker()) {
         return console.log('No worker state for the postMessage-ing page.');
     }
     // Fake the origin. TODO this should be better
     var messageEvent = new MessageEvent(msg, pageUrl.protocol + '//' + pageUrl.host);
-    workerState.active.worker.dispatchEvent(messageEvent);
+    workerRegistration.active.worker.dispatchEvent(messageEvent);
 }
 
 function registerServiceWorker(origin, glob, workerUrl) {
@@ -269,22 +241,22 @@ function registerServiceWorker(origin, glob, workerUrl) {
     // Load, install
     loadWorker(workerUrl)
         .then(function (workerData) {
-            var workerState = getWorkerState(glob);
+            var workerRegistration = workerRegistry.getOrCreateRegistration(workerUrl, glob);
 
             // Identical to installed worker?
-            if (hasInstalledWorker(workerState) &&
-                identicalWorker(workerState.installed, workerData)) {
+            if (workerRegistration.hasInstalledWorker() &&
+                _WorkerRegistry.identicalWorker(workerRegistration.installed, workerData)) {
                 return console.log('Ignoring – identical to installed worker.');
             }
 
             // Identical to active worker?
-            if (hasActiveWorker(workerState) &&
-                identicalWorker(workerState.active, workerData)) {
+            if (workerRegistration.hasActiveWorker &&
+                _WorkerRegistry.identicalWorker(workerRegistration.active, workerData)) {
                 return console.log('Ignoring – identical to active worker.');
             }
 
             return installWorker(workerData.worker).then(function () {
-                workerState.installed = workerData;
+                workerRegistration.installed = workerData;
             });
         })
         .catch(logError);
@@ -388,11 +360,6 @@ function activateWorker(worker) {
         console.log(chalk.red('Activation failed for worker version:'), chalk.yellow(worker.version));
     });
     return activatePromise;
-}
-
-function swapWorkers(workerState) {
-    workerState.active = workerState.installed;
-    workerState.installed = null;
 }
 
 /**
