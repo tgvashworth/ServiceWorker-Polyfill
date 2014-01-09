@@ -1,6 +1,6 @@
 {
   "name": "serviceworker",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Prototype implementation and polyfill for the ServiceWorker spec.",
   "preferGlobal": true,
   "dependencies": {
