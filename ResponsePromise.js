@@ -11,7 +11,7 @@ function ResponsePromise(request) {
     return new Promise(function (resolve, reject) {
         var reqStream = _Requester.makeRequest(request, function (err, rawResponse, body) {
             if (err) {
-                return reject(why);
+                return reject(err);
             }
             request.url = new URL(request.url);
             var response = new Response({
