@@ -1,23 +1,30 @@
 var hide = require('hide-key');
 var Promise = require('rsvp').Promise;
-
-var Request = require('../spec/Request');
-var Response = require('../spec/Response');
-var ResponsePromise = require('../spec/ResponsePromise');
-
-var CacheItemList = require('../spec/CacheItemList');
-var CacheError = require('../spec/CacheError');
+var path = require('path');
+var AsyncMap = require('../spec/AsyncMap');
+var URL = require('dom-urls');
 
 module.exports = Cache;
 
+// These should be overwritten
+Cache.ValuePromise = Promise;
+Cache.valueFromKey = function (key) {
+    return {
+        url: new URL(key)
+    };
+};
+Cache.transformValue = null;
+
 function Cache() {
-    this.items = new CacheItemList();
-    var urls = [].slice.call(arguments);
-    urls.forEach(this.add.bind(this));
+    this.items = new AsyncMap();
+    var args = [].slice.call(arguments);
+    args.forEach(function (url) {
+        this.add(new URL(url));
+    }, this);
 }
 
 Cache.prototype.ready = function () {
-    return Promise.all(this.items.values);
+    return Promise.all(this.items.values());
 };
 
 Cache.prototype.match = function (key) {
@@ -25,22 +32,26 @@ Cache.prototype.match = function (key) {
     return this.items.get(key);
 };
 
-Cache.prototype.add = function (key, responsePromise) {
+Cache.prototype.add = function (key, valuePromise) {
     key = key.toString();
-    if (typeof responsePromise === "undefined") {
-        responsePromise = new ResponsePromise(new Request({
-            url: key
-        }));
-    } else if (!(responsePromise instanceof Promise)) {
-        responsePromise = Promise.resolve(responsePromise);
+    if (typeof valuePromise === "undefined") {
+        valuePromise = Cache.promiseFromValue(Cache.valueFromKey(key));
+    } else if (!(valuePromise instanceof Promise)) {
+        valuePromise = Promise.resolve(valuePromise);
     }
 
-    // Tweak the response with cache headers
-    var cachableResponsePromise = responsePromise.then(function (response) {
-        response.headers['X-Service-Worker-Cache-Hit'] = true;
-        response.headers['X-Service-Worker-Cache-Key'] = key;
-        return response;
-    }.bind(this));
+    var cacheableValuePromise = this.persistValuePromise(key, valuePromise)
+        .then(Cache.transformValue)
+        .then(this.persistvalue.bind(this, key));
 
-    return this.items.set(key, cachableResponsePromise);
+    return this.items.set(key, cacheableValuePromise);
+};
+
+// TODO these should be overwritten or defer to somewhere else
+Cache.prototype.persistValuePromise = function (key, valuePromise) {
+    return valuePromise;
+};
+
+Cache.prototype.persistvalue = function (key, value) {
+    return value;
 };

@@ -1,6 +1,6 @@
+var Map = require('../spec/Map');
 var util = require('util');
 var hide = require('hide-key');
-var Map = require('../spec/Map.js');
 var Promise = require('rsvp').Promise;
 
 util.inherits(AsyncMap, Map);
@@ -20,10 +20,7 @@ AsyncMap.prototype.get = function (key) {
 
 AsyncMap.prototype.set = function (key, valuePromise) {
     key = key.toString();
-    if (!(valuePromise instanceof Promise)) {
-        valuePromise = Promise.resolve(valuePromise);
-    }
-    Map.prototype.set.call(this, key, valuePromise)
-    // TODO this should return a persist promise
+    valuePromise = Promise.cast(valuePromise);
+    Map.prototype.set.call(this, key, valuePromise);
     return valuePromise;
 };

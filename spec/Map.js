@@ -3,9 +3,14 @@ var hide = require('hide-key');
 
 module.exports = Map;
 
-function Map() {
+function Map(iterable) {
     hide(this, '_indexMap', {});
     hide(this, '_list', []);
+    if (iterable instanceof Array) {
+        iterable.forEach(function (pair) {
+            this.set.apply(this, pair);
+        }.bind(this));
+    }
 }
 
 Map.prototype.has = function (key) {
@@ -29,56 +34,53 @@ Map.prototype.set = function (key, value) {
     return this;
 };
 
-// FIXME: auto generate these
-
-Map.prototype.forEach = function (callback, ctx) {
-    var itemMap = this.toObject()
-    return this.keys.forEach(function (key) {
-        var item = this.get(key);
-        return callback.call(ctx || item, item, key, itemMap);
-    }.bind(this));
+Map.prototype.delete = function (key) {
+    key = key.toString();
+    if (this.has(key)) {
+        this._list.splice(this._indexMap[key], 1);
+        delete this._indexMap[key];
+    }
+    return this;
 };
 
-Map.prototype.every = function (callback, ctx) {
-    var itemMap = this.toObject();
-    return this.keys.every(function (key) {
-        var item = this.get(key);
-        return callback.call(ctx || item, item, key, itemMap);
-    }.bind(this));
-};
+var iterators = ['forEach', 'map', 'reduce', 'every', 'some', 'filter'];
+iterators.forEach(function (method) {
 
-Map.prototype.map = function (callback, ctx) {
-    var itemMap = this.toObject();
-    return this.keys.map(function (key) {
-        var item = this.get(key);
-        return callback.call(ctx || item, item, key, itemMap);
-    }.bind(this));
-};
+    Map.prototype[method] = function (callback) {
+        var args = [].slice.call(arguments, 1);
+        var self = this;
+        args.unshift(function () {
+            var innerArgs = [].slice.call(arguments);
+            var key = innerArgs[innerArgs.length - 3];
+            var item = self.get(key);
+            innerArgs[innerArgs.length - 2] = key;
+            innerArgs[innerArgs.length - 3] = item;
+            return callback.apply(this, innerArgs);
+        });
+        return this.keys[method].apply(this.keys, args);
+    };
+
+});
+
 
 Map.prototype.toObject = function () {
-    return this.keys.reduce(function (memo, key) {
-        memo[key] = this.get(key);
+    return this.reduce(function (memo, value, key) {
+        memo[key] = value;
         return memo;
-    }.bind(this), {});
+    }, {});
 };
 
-Object.defineProperty(Map.prototype, 'values', {
-    get: function () {
-        return [].slice.call(this._list);
-    }
-});
+Map.prototype.values = function() {
+    return [].slice.call(this._list);
+};
 
-Object.defineProperty(Map.prototype, 'keys', {
-    get: function () {
-        return Object.keys(this._indexMap);
-    }
-});
+Map.prototype.items = function() {
+    return this.values();
+};
 
-Object.defineProperty(Map.prototype, 'items', {
-    get: function () {
-        return this.values;
-    }
-});
+Map.prototype.keys = function() {
+    return Object.keys(this._indexMap);
+};
 
 Object.defineProperty(Map.prototype, 'size', {
     get: function () {

@@ -3,10 +3,14 @@ var CacheList = require('../spec/CacheList');
 
 module.exports = ServiceWorker;
 
-function ServiceWorker() {
+function ServiceWorker(workerUrl, glob, origin) {
     hide(this, '_eventListeners', []);
     this.version = 0;
+    this.workerUrl = workerUrl;
+    this.glob = glob;
+    this.origin = origin;
     this.caches = new CacheList();
+    this.caches.origin = this.origin;
 }
 
 /**

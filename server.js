@@ -16,7 +16,6 @@ var astUtils = require('./lib/astUtils');
   */
 var _WorkerRegistry = require('./lib/_WorkerRegistry');
 var _WorkerRegistration = require('./lib/_WorkerRegistration');
-var _Requester = require('./lib/_Requester');
 var _Responder = require('./lib/_Responder');
 var _ProxyRequest = require('./lib/_ProxyRequest');
 
@@ -30,11 +29,6 @@ var Promise = require('rsvp').Promise;
 
 var URL = require('dom-urls');
 
-var AsyncMap = require('./spec/AsyncMap');
-var CacheList = require('./spec/CacheList');
-var CacheItemList = require('./spec/CacheItemList');
-var Cache = require('./spec/Cache');
-
 var fetch = require('./spec/fetch');
 var importScripts = require('./spec/importScripts');
 
@@ -42,6 +36,25 @@ var ResponsePromise = require('./spec/ResponsePromise');
 var Response = require('./spec/Response');
 var SameOriginResponse = require('./spec/SameOriginResponse');
 var Request = require('./spec/Request');
+
+var Map = require('./spec/Map');
+var AsyncMap = require('./spec/AsyncMap');
+var CacheList = require('./spec/CacheList');
+var CacheItemList = require('./spec/CacheItemList');
+var Cache = require('./spec/Cache');
+
+Cache.promiseFromValue = function (value) {
+    return fetch(value);
+};
+Cache.valueFromKey = function (key) {
+    return new Request({
+        url: key
+    });
+};
+Cache.transformValue = function (response) {
+    response.headers['X-Service-Worker-Cache-Hit'] = true;
+    return response;
+};
 
 var Event = require('./spec/Event');
 var InstallEvent = require('./spec/InstallEvent');
@@ -264,7 +277,7 @@ function registerServiceWorker(origin, glob, workerUrl) {
  */
 function loadWorker(workerUrl) {
     // Load and compare worker files
-    return new ResponsePromise({ url: workerUrl }).then(function (response) {
+    return fetch(workerUrl).then(function (response) {
         return response.body.toString();
     });
 }
@@ -273,12 +286,12 @@ function loadWorker(workerUrl) {
  * Eval the worker in a new ServiceWorker context with all the trimmings, via new Function.
  */
 function setupWorker(workerFile, workerUrl, glob, origin) {
-    var worker = new ServiceWorker();
+    var worker = new ServiceWorker(workerUrl, glob, origin);
     var importer = importScripts(workerUrl);
     var expandedWorkerBody = expandWorkerFile(workerFile);
     var workerFn = new Function(
         // Argument names
-        'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
+        'Map', 'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
         'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent', 'MessageEvent',
         'Response', 'SameOriginResponse',
         'Request',
@@ -292,7 +305,7 @@ function setupWorker(workerFile, workerUrl, glob, origin) {
         // this
         worker,
         // Arguments
-        AsyncMap, CacheList, CacheItemList, Cache,
+        Map, AsyncMap, CacheList, CacheItemList, Cache,
         Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
         Response, SameOriginResponse,
         Request,
