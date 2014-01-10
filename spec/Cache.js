@@ -1,6 +1,5 @@
 var hide = require('hide-key');
 var Promise = require('rsvp').Promise;
-var _instanceOf = require('../lib/_instanceOf');
 
 var Request = require('../spec/Request');
 var Response = require('../spec/Response');
@@ -13,58 +12,37 @@ module.exports = Cache;
 
 function Cache() {
     this.items = new CacheItemList();
-    hide(this, '_isReady', false);
-    hide(this, '_cacheResponsePromises', []);
-
     var urls = [].slice.call(arguments);
     urls.forEach(this.add.bind(this));
 }
 
 Cache.prototype.ready = function () {
-    return Promise.all(this._cacheResponsePromises).then(function (responses) {
-        this._isReady = true;
-        return responses;
-    }.bind(this));
+    return Promise.all(this.items.values);
 };
 
-// FIXME: what happens if the request are still being made? Should we wait
-// until they're ready to match?
 Cache.prototype.match = function (key) {
     key = key.toString();
-    if (!this._isReady) {
-        console.log('cache not ready')
-        throw new CacheError('Cache is not ready.');
-    }
-    var items = this.items;
-    return this.ready().then(function () {
-        if (items.has(key)) {
-            return items.get(key);
-        }
-        throw new CacheError('Not found in cache.');
-    });
+    return this.items.get(key);
 };
 
-Cache.prototype.add = function (key, response) {
+Cache.prototype.add = function (key, responsePromise) {
     key = key.toString();
-    if (typeof response !== "undefined" &&
-        _instanceOf(response, Response)) {
-        var newResponse = new Response(response);
-        newResponse.headers['X-Cache-Hit'] = true;
-        newResponse.headers['X-Cache-Key'] = key;
-        return this.items.set(key, newResponse);
+    if (typeof responsePromise === "undefined") {
+        responsePromise = new ResponsePromise(new Request({
+            url: key
+        }));
+    } else if (!(responsePromise instanceof Promise)) {
+        responsePromise = Promise.resolve(responsePromise);
     }
-    // _instanceOf Request could work here
-    var request = new Request({
-        url: key
-    });
-    var responsePromise = new ResponsePromise(request).then(function (response) {
-        // console.log('cache populated with', key, response);
-        response.headers['X-Cache-Hit'] = true;
-        response.headers['X-Cache-Key'] = key;
-        this.items.set(key, response);
+
+    // Tweak the response with cache headers
+    var cachableResponsePromise = responsePromise.then(function (response) {
+        response.headers['X-Service-Worker-Cache-Hit'] = true;
+        response.headers['X-Service-Worker-Cache-Key'] = key;
         return response;
     }.bind(this));
-    this._cacheResponsePromises.push(responsePromise);
-    this._isReady = false;
-    return responsePromise;
+
+    return this.items.set(key, cachableResponsePromise).then(function (response) {
+        console.log('cache set', response);
+    });
 };

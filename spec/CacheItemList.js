@@ -1,9 +1,9 @@
 var util = require('util');
-var CacheList = require('../spec/CacheList');
-util.inherits(CacheItemList, CacheList);
+var AsyncMap = require('../spec/AsyncMap');
+util.inherits(CacheItemList, AsyncMap);
 
 module.exports = CacheItemList;
 
 function CacheItemList() {
-    CacheList.call(this);
+    AsyncMap.call(this);
 }
