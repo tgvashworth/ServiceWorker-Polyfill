@@ -42,7 +42,5 @@ Cache.prototype.add = function (key, responsePromise) {
         return response;
     }.bind(this));
 
-    return this.items.set(key, cachableResponsePromise).then(function (response) {
-        console.log('cache set', response);
-    });
+    return this.items.set(key, cachableResponsePromise);
 };

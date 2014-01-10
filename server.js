@@ -69,17 +69,15 @@ var workerRegistry = new _WorkerRegistry();
 
 module.exports.startServer = startServer;
 function startServer(port) {
+    return Promise.resolve().then(function () {
+        // Proxy server
+        var server = httpProxy.createServer(handleRequest).listen(port);
 
-    /**
-      * Proxy server
-      */
-    var server = httpProxy.createServer(handleRequest).listen(port);
-
-    /**
-     * WebSocket is added by the extension
-     */
-    var wss = new WebSocketServer({ server: server });
-    wss.on('connection', handleWebSocket);
+        // WebSocket server. The WebSocket is added to pages by the extension.
+        var wss = new WebSocketServer({ server: server });
+        wss.on('connection', handleWebSocket);
+        return server;
+    });
 }
 
 /**
@@ -102,7 +100,7 @@ function handleRequest(_request, _response, proxy) {
     if (request.headers['x-service-worker-request-type'] === 'fetch') {
         // No referer header, not much we can do
         if (!request.headers.referer) {
-            console.error('No referer header:', request.url.toString());
+            console.log(chalk.blue('info:'), 'no referer header for', request.url.toString());
             return passThroughRequest(_request, _response, proxy);
         }
         urlToMatch = new URL(request.headers.referer);
@@ -127,7 +125,7 @@ function handleRequest(_request, _response, proxy) {
         return passThroughRequest(_request, _response, proxy);
     }
 
-    console.log(_request.headers['x-service-worker-request-type'], request.url.toString());
+    console.log(chalk.yellow('%s'), _request.headers['x-service-worker-request-type'], request.url.toString());
 
     var _responder = new _Responder(request, _response);
     var fetchEvent = new FetchEvent(_request.headers['x-service-worker-request-type'], request, _responder);

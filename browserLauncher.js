@@ -34,46 +34,49 @@ function ask(question, opts) {
 }
 
 module.exports = function browserLauncher(chromiumPath, proxyPort) {
-    return Promise.resolve().then(function() {
-        if (chromiumPath) {
-            return chromiumPath;
-        }
+    return Promise.resolve()
+        .then(function() {
+            if (chromiumPath) {
+                return chromiumPath;
+            }
 
-        for (var i = 0; i < chromiumPaths.length; i++) if (fs.existsSync(chromiumPaths[i])) {
-            return chromiumPaths[i];
-        }
-
-        return ask("Enter path to Chrome:", {
-            validate: function(chromiumPath) {
-                return fs.existsSync(chromiumPath);
-            },
-            errorMsg: "Cannot find Chromium"
-        });
-    }).then(function(chromiumPath) {
-        var process = spawn(chromiumPath, [
-            "--proxy-server=http=localhost:" + Number(proxyPort),
-            "--load-extension=" + path.join(__dirname, "extension")
-        ]);
-
-        return new Promise(function(resolve, reject) {
-            process.on('error', function(err) {
-                if (err.code == "ENOENT") {
-                    reject(Error("No browser at " + chromiumPath));
+            for (var i = 0; i < chromiumPaths.length; i++) {
+                if (fs.existsSync(chromiumPaths[i])) {
+                    return chromiumPaths[i];
                 }
-                else {
-                    reject(err);
-                }
+            }
+
+            return ask("Enter path to Chrome:", {
+                validate: function(chromiumPath) {
+                    return fs.existsSync(chromiumPath);
+                },
+                errorMsg: "Cannot find Chromium"
             });
+        })
+        .then(function(chromiumPath) {
+            var process = spawn(chromiumPath, [
+                "--proxy-server=http=localhost:" + Number(proxyPort),
+                "--load-extension=" + path.join(__dirname, "extension")
+            ]);
 
-            process.on('exit', function(code) {
-                if (code) {
-                    reject(Error("Cannot start \""+ chromiumPath +"\", ensure it isn't already running, and try again"));
-                }
+            return new Promise(function(resolve, reject) {
+                process.on('error', function(err) {
+                    if (err.code == "ENOENT") {
+                        reject(Error("No browser at " + chromiumPath));
+                    } else {
+                        reject(err);
+                    }
+                });
+
+                process.on('exit', function(code) {
+                    if (code) {
+                        reject(Error("Cannot start \""+ chromiumPath +"\", ensure it isn't already running, and try again."));
+                    }
+                });
+
+                setTimeout(function() {
+                    resolve(process);
+                }, 3000); // assuming everything's ok after a second. Yeah, I know.
             });
-
-            setTimeout(function() {
-                resolve(process);
-            }, 1000); // assuming everything's ok after a second. Yeah, I know.
         });
-    });
 };
