@@ -201,7 +201,7 @@ function handleWebSocket(socket) {
 /**
  * Handles navigator.registerServiceWorker(...)
  */
-function registerServiceWorker(origin, glob, workerUrl) {
+function registerServiceWorker(origin, glob, rawGlob, workerUrl) {
     // Trailing stars are pointless
     glob = glob.replace(/\*$/, '');
 
@@ -259,7 +259,7 @@ function registerServiceWorker(origin, glob, workerUrl) {
             }
 
             // We're all good, so setup (execute) the worker
-            return setupWorker(workerFile, workerUrl, glob, origin);
+            return setupWorker(workerFile, workerUrl, glob, rawGlob, origin);
         })
         // We have an executed worker, so now install it
         .then(function (workerData) {
@@ -285,8 +285,8 @@ function loadWorker(workerUrl) {
 /**
  * Eval the worker in a new ServiceWorker context with all the trimmings, via new Function.
  */
-function setupWorker(workerFile, workerUrl, glob, origin) {
-    var worker = new ServiceWorker(workerUrl, glob, origin);
+function setupWorker(workerFile, workerUrl, glob, rawGlob, origin) {
+    var worker = new ServiceWorker(workerUrl, glob, rawGlob, origin);
     var importer = importScripts(workerUrl);
     var expandedWorkerBody = expandWorkerFile(workerFile);
     var workerFn = new Function(
