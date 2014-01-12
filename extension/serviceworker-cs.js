@@ -95,7 +95,7 @@ function polyfill() {
     };
 
     window.navigator.registerServiceWorker = function (glob, workerUrl) {
-        callRemote('register', window.location.origin, resolveUrl(glob), resolveUrl(workerUrl));
+        callRemote('register', window.location.origin, resolveUrl(glob), glob, resolveUrl(workerUrl));
     };
 }
 
