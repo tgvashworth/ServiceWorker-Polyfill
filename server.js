@@ -10,6 +10,7 @@ var urlLib = require('url');
 var chalk = require('chalk');
 var httpProxy = require('http-proxy');
 var astUtils = require('./lib/astUtils');
+var vm = require('vm');
 
 /**
   * Internal APIs
@@ -276,33 +277,27 @@ function setupWorker(workerFile, workerUrl, glob, rawGlob, origin) {
     var worker = new ServiceWorker(workerUrl, glob, rawGlob, origin);
     var importer = importScripts(workerUrl);
     var expandedWorkerBody = expandWorkerFile(workerFile);
-    var workerFn = new Function(
-        // Argument names
-        'Map', 'AsyncMap', 'CacheList', 'CacheItemList', 'Cache',
-        'Event', 'InstallEvent', 'ActivateEvent', 'FetchEvent', 'MessageEvent',
-        'Response', 'SameOriginResponse',
-        'Request',
-        'fetch', 'URL', 'importScripts',
-        'Promise',
-        'console', // teehee
-        // Function body
-        expandedWorkerBody
-    );
-    workerFn.call(
-        // this
-        worker,
-        // Arguments
-        Map, AsyncMap, CacheList, CacheItemList, Cache,
-        Event, InstallEvent, ActivateEvent, FetchEvent, MessageEvent,
-        Response, SameOriginResponse,
-        Request,
-        fetch, URL, importer,
-        Promise,
-        fakeConsole
-    );
+
+    // The vm stuff involves some hackery
+    // http://nodejs.org/api/vm.html#vm_sandboxes
+    // This recovers from:
+    // a) The lack of prototype use
+    // b) The loss of 'this' context
+    for (var key in worker) {
+        if (worker.hasOwnProperty(key)) continue;
+
+        if (worker[key].bind) {
+            worker[key] = worker[key].bind(worker);
+        }
+        else {
+            worker[key] = worker[key];
+        }
+    }
+
+    vm.runInNewContext(expandedWorkerBody, worker, workerUrl);
 
     // Now the worker has been setup. Don't allow importScripts to be called again.
-    importer.disable();
+    worker.importScripts.disable();
 
     return {
         worker: worker,
