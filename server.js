@@ -43,19 +43,6 @@ var CacheList = require('./spec/CacheList');
 var CacheItemList = require('./spec/CacheItemList');
 var Cache = require('./spec/Cache');
 
-Cache.promiseFromValue = function (value) {
-    return fetch(value);
-};
-Cache.valueFromKey = function (key) {
-    return new Request({
-        url: key
-    });
-};
-Cache.transformValue = function (response) {
-    response.headers['X-Service-Worker-Cache-Hit'] = true;
-    return response;
-};
-
 var Event = require('./spec/Event');
 var InstallEvent = require('./spec/InstallEvent');
 var FetchEvent = require('./spec/FetchEvent');

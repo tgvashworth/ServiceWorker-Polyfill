@@ -2,18 +2,33 @@ var hide = require('hide-key');
 var Promise = require('rsvp').Promise;
 var path = require('path');
 var AsyncMap = require('../spec/AsyncMap');
+var Request = require('../spec/Request');
+var fetch = require('../spec/fetch');
 var URL = require('dom-urls');
 
 module.exports = Cache;
 
-// These should be overwritten
-Cache.ValuePromise = Promise;
-Cache.valueFromKey = function (key) {
-    return {
-        url: new URL(key)
-    };
+Cache.promiseFromValue = function (value) {
+    return fetch(value);
 };
-Cache.transformValue = null;
+Cache.valueFromKey = function (key) {
+    return new Request({
+        url: key
+    });
+};
+Cache.transformValue = function (response) {
+    response.headers['X-Service-Worker-Cache-Hit'] = true;
+    return response;
+};
+
+// TODO these should be overwritten or defer to somewhere else
+Cache.persistValuePromise = function (key, valuePromise) {
+    return valuePromise;
+};
+
+Cache.persistvalue = function (key, value) {
+    return value;
+};
 
 function Cache() {
     this.items = new AsyncMap();
@@ -40,18 +55,9 @@ Cache.prototype.add = function (key, valuePromise) {
         valuePromise = Promise.resolve(valuePromise);
     }
 
-    var cacheableValuePromise = this.persistValuePromise(key, valuePromise)
+    var cacheableValuePromise = Cache.persistValuePromise(key, valuePromise)
         .then(Cache.transformValue)
-        .then(this.persistvalue.bind(this, key));
+        .then(Cache.persistvalue.bind(this, key));
 
     return this.items.set(key, cacheableValuePromise);
-};
-
-// TODO these should be overwritten or defer to somewhere else
-Cache.prototype.persistValuePromise = function (key, valuePromise) {
-    return valuePromise;
-};
-
-Cache.prototype.persistvalue = function (key, value) {
-    return value;
 };
