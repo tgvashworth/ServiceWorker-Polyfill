@@ -1,17 +1,16 @@
 var hide = require('hide-key');
 var CacheList = require('../spec/CacheList');
+var importScripts = require('../spec/importScripts');
+var chalk = require('chalk');
 
 module.exports = ServiceWorker;
 
-function ServiceWorker(workerUrl, glob, rawGlob, origin) {
-    hide(this, '_eventListeners', []);
+function ServiceWorker(workerUrl) {
+    this._eventListeners = [];
     this.version = 0;
-    this.registration = rawGlob;
-    this.workerUrl = workerUrl;
-    this.glob = glob;
-    this.origin = origin;
     this.caches = new CacheList();
-    this.caches.origin = this.origin;
+    this.caches.origin = workerUrl.origin;
+    this.importScripts = importScripts(workerUrl);
 }
 
 /**
@@ -38,3 +37,32 @@ ServiceWorker.prototype.dispatchEvent = function (event) {
         return event._isStopped();
     }.bind(this));
 };
+
+ServiceWorker.prototype.console = Object.getOwnPropertyNames(console).reduce(function (memo, method) {
+    memo[method] = console[method];
+    if (typeof console[method] === "function") {
+        memo[method] = memo[method].bind(console, chalk.blue('sw:'));
+    }
+    return memo;
+}, Object.create(console));
+
+ServiceWorker.prototype.setTimeout = setTimeout;
+ServiceWorker.prototype.clearTimeout = clearTimeout;
+ServiceWorker.prototype.setInterval = setInterval;
+ServiceWorker.prototype.clearInterval = clearInterval;
+
+ServiceWorker.prototype.Map = require('../spec/Map');
+ServiceWorker.prototype.AsyncMap = require('../spec/AsyncMap');
+ServiceWorker.prototype.Cache = require('../spec/Cache');
+ServiceWorker.prototype.CacheList = require('../spec/CacheList');
+ServiceWorker.prototype.Event = require('../spec/Event');
+ServiceWorker.prototype.InstallEvent = require('../spec/InstallEvent');
+ServiceWorker.prototype.FetchEvent = require('../spec/FetchEvent');
+ServiceWorker.prototype.ActivateEvent = require('../spec/ActivateEvent');
+ServiceWorker.prototype.MessageEvent = require('../spec/MessageEvent');
+ServiceWorker.prototype.Response = require('../spec/Response');
+ServiceWorker.prototype.SameOriginResponse = require('../spec/SameOriginResponse');
+ServiceWorker.prototype.Request = require('../spec/Request');
+ServiceWorker.prototype.fetch = require('../spec/fetch');
+ServiceWorker.prototype.URL = require('dom-urls');
+ServiceWorker.prototype.Promise = require('rsvp').Promise;
