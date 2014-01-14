@@ -1,16 +1,30 @@
 var hide = require('hide-key');
 var CacheList = require('../spec/CacheList');
-var importScripts = require('../spec/importScripts');
 var chalk = require('chalk');
 
 module.exports = ServiceWorker;
 
 function ServiceWorker(workerUrl) {
     this._eventListeners = [];
-    this.version = 0;
+
+    // TODO: replace this with a constructor param.
+    // Something like _CacheLists should store a CacheList per origin
     this.caches = new CacheList();
+
+    // TODO: work out why this is needed, hopefully remove
     this.caches.origin = workerUrl.origin;
-    this.importScripts = importScripts(workerUrl);
+
+    // importScripts requires execution context info, so it's handled in _Worker.js
+    // this.importScripts = ...
+    
+    // this means we can get the version number via worker.scope.version
+    // I'm not entirely sure why this works or why it doesn't work as
+    // a normal property. vm weirdness. Maybe there's a better way.
+    var _version = 0;
+    Object.defineProperty(this, 'version', {
+        get: function() { return _version; },
+        set: function(val) { _version = val; }
+    });
 }
 
 /**

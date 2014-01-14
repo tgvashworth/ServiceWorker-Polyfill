@@ -4,16 +4,17 @@ var _instanceOf = require('../lib/_instanceOf');
 var Event = require('../spec/Event');
 var Response = require('../spec/Response');
 var SameOriginResponse = require('../spec/SameOriginResponse');
+var ResponsePromise = require('../spec/ResponsePromise');
 var Promise = require('rsvp').Promise;
 var URL = require('dom-urls');
 util.inherits(FetchEvent, Event);
 
 module.exports = FetchEvent;
 
-function FetchEvent(type, request, _responder) {
+function FetchEvent(type, request) {
     Event.call(this, 'fetch');
     this.type = type;
-    hide(this, '_responder', _responder);
+    hide(this, '_responsePromise', null);
     this.request = request;
     this.isTopLevel = false;
 }
@@ -29,20 +30,9 @@ FetchEvent.prototype.respondWith = function (response) {
 
     this.stopImmediatePropagation();
 
-    var responsePromise = response;
-    if (_instanceOf(response, Response)) {
-        responsePromise = new Promise(function (resolve, reject) {
-            resolve(response);
-        });
-    }
+    this._responsePromise = ResponsePromise.cast(response);
 
-    return responsePromise.then(
-        this._responder.respond.bind(this._responder)
-    ).then(null, function (why) {
-        console.error('_responder error', why);
-        console.error(why.stack);
-        throw why;
-    });
+    return this._responsePromise;
 };
 
 FetchEvent.prototype.forwardTo = function(url) {
@@ -56,4 +46,4 @@ FetchEvent.prototype.forwardTo = function(url) {
             headers: { 'Location': url.toString() }
         })
     );
-}
+};

@@ -93,7 +93,7 @@ function polyfill() {
         return function (url) {
             anchor.href = url;
             return anchor.href;
-        }
+        };
     }());
 
     /**
@@ -107,7 +107,7 @@ function polyfill() {
     };
 
     window.navigator.registerServiceWorker = function (glob, workerUrl) {
-        callRemote('register', window.location.origin, resolveUrl(glob), glob, resolveUrl(workerUrl));
+        callRemote('register', window.location.href, resolveUrl(glob), resolveUrl(workerUrl));
     };
 }
 
