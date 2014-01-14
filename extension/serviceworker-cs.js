@@ -21,11 +21,13 @@ function polyfill() {
      * with the node serviceworker implementation.
      */
     var ws;
+    var wsQueue = [];
 
     function connect(tryReconnect) {
         ws = new WebSocket('ws://localhost:5678');
         ws.addEventListener('open', function () {
             tryReconnect = true;
+            wsFlushQueue();
         });
         ws.addEventListener('message', function (event) {
             console.log.apply(console, ['ws:'].concat(arguments));
@@ -61,11 +63,21 @@ function polyfill() {
     }
 
     function wsSend(type, data) {
-        if (!wsConnected()) return;
+        if (!wsConnected()) {
+            // try again later
+            wsQueue.push([type, data]);
+            return;
+        }
         ws.send(JSON.stringify({
             type: type,
             data: data
         }));
+    }
+
+    function wsFlushQueue() {
+        while (wsConnected() && wsQueue[0]) {
+            wsSend.apply(null, wsQueue.shift());
+        }
     }
 
     function callRemote(method /* ... args*/) {
