@@ -49,8 +49,9 @@ function handleRequest(_request, _response, proxy) {
 
     var request = new Request(_request);
     var pageUrl;
+    var isNavigate = request.headers['x-service-worker-request-type'] === 'navigate';
 
-    if (request.headers['x-service-worker-request-type'] === 'fetch') {
+    if (!isNavigate) {
         // No referer header, not much we can do
         if (!request.headers.referer) {
             console.log(chalk.blue('info:'), 'no referer header for', request.url.toString());
@@ -62,15 +63,30 @@ function handleRequest(_request, _response, proxy) {
         pageUrl = request.url;
     }
 
-    var worker = workerRegistry.getActiveWorkerForUrl(pageUrl);
+    var registration = workerRegistry.getRegistrationFromUrl(pageUrl);
+
+    // TODO: this is non-standard behaviour, change this.
+    // Currently any fully installed nextWorker is being
+    // activated, as if it called replace().
+    if (registration && registration.nextWorker && registration.nextWorker.isInstalled) {
+        registration.promoteNextWorker();
+    }
 
     // Nothing matched against this URL, so pass-through
-    if (!worker) {
+    if (!registration || !registration.activeWorker) {
         _response.setHeader('x-worker', 'none');
         return passThroughRequest(_request, _response, proxy);
     }
 
-    worker.handleRequest(request, _response);
+    return registration.activeWorker.handleRequest(request, _response).then(function() {
+        // update the controller on navigate
+        if (isNavigate) {
+            return registration.update();
+        }
+    }).catch(function(err) {
+        console.error(chalk.red(err.stack));
+        throw err;
+    });
 }
 
 function passThroughRequest(_request, _response, proxy) {
@@ -95,15 +111,18 @@ function handleWebSocket(socket) {
             return;
         }
 
-        if (data.type === 'register') {
-            workerRegistry.register.apply(workerRegistry, data.data.args);
-            return;
-        }
-        
-        if (data.type === 'postMessage') {
-            workerRegistry.postMessageWorker.apply(workerRegistry, data.data.args);
-            return;
-        }
+        Promise.resolve().then(function() {
+            if (data.type === 'register') {
+                return workerRegistry.register.apply(workerRegistry, data.data.args);
+            }
+            
+            if (data.type === 'postMessage') {
+                return workerRegistry.postMessageWorker.apply(workerRegistry, data.data.args);
+            }
+        }).catch(function(err) {
+            console.error(chalk.red(err.stack));
+            throw err;
+        });
     });
     socket.on('close', function (message) {});
 }
