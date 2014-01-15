@@ -11,20 +11,9 @@ function InstallPhaseEvent(type) {
     hide(this, '_wait', Promise.resolve());
 }
 
-InstallPhaseEvent.prototype.waitUntil = function () {
-    [].forEach.call(arguments, function (arg) {
-        if (!arg instanceof Promise) {
-            throw new TypeError('Arguments to waitUntil must be Promises.');
-        }
-    });
-
+InstallPhaseEvent.prototype.waitUntil = function (promise) {
     // FIXME: propagation? preventDefault?
     this.stopImmediatePropagation();
-
-    this._wait = Promise.all([].slice.call(arguments)).then(
-        this._resolve,
-        this._reject
-    );
-
+    this._wait = Promise.cast(promise);
     return this._wait;
 };
