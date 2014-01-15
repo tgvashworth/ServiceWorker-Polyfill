@@ -3,15 +3,15 @@ var Promise = require('rsvp').Promise;
 var Event = require('../spec/Event');
 var hide = require('hide-key');
 
-util.inherits(PromiseEvent, Event);
-module.exports = PromiseEvent;
+util.inherits(InstallPhaseEvent, Event);
+module.exports = InstallPhaseEvent;
 
-function PromiseEvent(type) {
+function InstallPhaseEvent(type) {
     Event.call(this, type);
     hide(this, '_wait', Promise.resolve());
 }
 
-PromiseEvent.prototype.waitUntil = function () {
+InstallPhaseEvent.prototype.waitUntil = function () {
     [].forEach.call(arguments, function (arg) {
         if (!arg instanceof Promise) {
             throw new TypeError('Arguments to waitUntil must be Promises.');

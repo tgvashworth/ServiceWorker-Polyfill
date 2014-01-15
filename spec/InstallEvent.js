@@ -1,13 +1,13 @@
 var util = require('util');
 var Promise = require('rsvp').Promise;
-var PromiseEvent = require('../spec/PromiseEvent');
+var InstallPhaseEvent = require('../spec/InstallPhaseEvent');
 var hide = require('hide-key');
 
-util.inherits(InstallEvent, PromiseEvent);
+util.inherits(InstallEvent, InstallPhaseEvent);
 module.exports = InstallEvent;
 
 function InstallEvent(onReplace) {
-    PromiseEvent.call(this, 'install');
+    InstallPhaseEvent.call(this, 'install');
     this._onReplace = onReplace || function(){};
 }
 
