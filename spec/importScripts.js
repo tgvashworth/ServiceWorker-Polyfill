@@ -29,7 +29,7 @@ module.exports = function () {
 				console.log('URL:', absoluteUrl.toString());
 				throw new Error('Network error while calling importScripts()');
 			}
-		}).join('\n;\n');
+		});
 	}
 
 	importer.disable = function() {

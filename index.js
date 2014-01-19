@@ -11,6 +11,7 @@ var argvConfig = require('optimist')
     .usage('ServiceWorker polyfill.\nPlease submit issues at ' + issueLink)
     .describe('no-browser', 'Do not launch Chrome Canary.')
     .describe('only-browser', 'Only launch Chrome Canary.')
+    .describe('debug', 'Debug with node-inspector.')
     .describe('help', 'Show this help message.')
     .alias('h', 'help');
 
@@ -18,6 +19,10 @@ var argv = argvConfig.argv;
 
 if (argv.h) {
     return argvConfig.showHelp();
+}
+
+if (argv.debug && process._debugProcess) {
+    process._debugProcess(process.pid);
 }
 
 var proxyPort = argv.port || 5678;

@@ -34,6 +34,7 @@ this.addEventListener('fetch', function (event) {
     event.respondWith(
         // Try to find the URL in the cache first
         caches.match(event.request.url).catch(function () {
+            console.log("No match for", event.request.url.toString());
             // In the event of a failure, go to the network
             return fetch(event.request.url);
         })
