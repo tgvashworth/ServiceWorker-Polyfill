@@ -38,18 +38,11 @@ function startServer(port) {
  */
 
 function handleRequest(_request, _response, proxy) {
-    // Ignore requests without the X-For-Service-Worker header
-    // if (typeof _request.headers['x-for-service-worker'] === 'undefined') {
-    //     return passThroughRequest(_request, _response, proxy);
-    // }
-
-    // This may go to the network, so delete the ServiceWorker header
-    // delete _request.headers['x-for-service-worker'];
-    _response.setHeader('x-meddled-with', true);
+    _response.setHeader('X-Proxy', 'ServiceWorker-Polyfill');
 
     var request = new Request(_request);
     var pageUrl;
-    var isNavigate = request.headers['x-service-worker-request-type'] === 'navigate';
+    var isNavigate = (request.headers['x-service-worker-request-type'] === 'navigate');
 
     if (!isNavigate) {
         // No referer header, not much we can do
@@ -74,7 +67,7 @@ function handleRequest(_request, _response, proxy) {
 
     // Nothing matched against this URL, so pass-through
     if (!registration || !registration.activeWorker) {
-        _response.setHeader('x-worker', 'none');
+        _response.setHeader('X-Worker', 'none');
         return passThroughRequest(_request, _response, proxy);
     }
 
@@ -99,11 +92,8 @@ function passThroughRequest(_request, _response, proxy) {
 }
 
 function handleWebSocket(socket) {
-    // Listen up!
     socket.on('message', function (message) {
-        // TODO guard this
         var data;
-
         try {
             data = JSON.parse(message);
         } catch (e) {
@@ -111,11 +101,11 @@ function handleWebSocket(socket) {
             return;
         }
 
-        Promise.resolve().then(function() {
+        Promise.resolve(data).then(function(data) {
             if (data.type === 'register') {
                 return workerRegistry.register.apply(workerRegistry, data.data.args);
             }
-            
+
             if (data.type === 'postMessage') {
                 return workerRegistry.postMessageWorker.apply(workerRegistry, data.data.args);
             }

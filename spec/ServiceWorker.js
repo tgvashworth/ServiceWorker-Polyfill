@@ -16,7 +16,7 @@ function ServiceWorker(workerUrl) {
 
     // importScripts requires execution context info, so it's handled in _Worker.js
     // this.importScripts = ...
-    
+
     // this means we can get the version number via worker.scope.version
     // I'm not entirely sure why this works or why it doesn't work as
     // a normal property. vm weirdness. Maybe there's a better way.
@@ -38,7 +38,7 @@ ServiceWorker.prototype.addEventListener = function (type, listener) {
 
 ServiceWorker.prototype.removeEventListener = function (type, listener) {
     this._eventListeners[type] || (this._eventListeners[type] = []);
-    // FIME does this need to be repeated? while (index = blah > -1)
+    // FIXME: does this need to be repeated? while (index = blah > -1)
     var index = this._eventListeners[type].indexOf(listener);
     if (index < 0) return;
     this._eventListeners[type].splice(index, 1);

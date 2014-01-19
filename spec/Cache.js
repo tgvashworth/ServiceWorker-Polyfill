@@ -8,6 +8,10 @@ var URL = require('dom-urls');
 
 module.exports = Cache;
 
+/**
+ * Static
+ */
+
 Cache.promiseFromValue = function (value) {
     return fetch(value);
 };
@@ -17,7 +21,7 @@ Cache.valueFromKey = function (key) {
     });
 };
 Cache.transformValue = function (response) {
-    response.headers['X-Service-Worker-Cache-Hit'] = true;
+    response.headers['X-Service-Worker-Cache'] = 'HIT';
     return response;
 };
 
@@ -26,9 +30,13 @@ Cache.persistValuePromise = function (key, valuePromise) {
     return valuePromise;
 };
 
-Cache.persistvalue = function (key, value) {
+Cache.persistValue = function (key, value) {
     return value;
 };
+
+/**
+ * Cache
+ */
 
 function Cache() {
     this.items = new AsyncMap();
@@ -57,7 +65,7 @@ Cache.prototype.add = function (key, valuePromise) {
 
     var cacheableValuePromise = Cache.persistValuePromise(key, valuePromise)
         .then(Cache.transformValue)
-        .then(Cache.persistvalue.bind(this, key));
+        .then(Cache.persistValue.bind(this, key));
 
     return this.items.set(key, cacheableValuePromise);
 };
