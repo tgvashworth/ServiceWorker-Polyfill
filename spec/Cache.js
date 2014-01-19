@@ -5,6 +5,7 @@ var AsyncMap = require('../spec/AsyncMap');
 var Request = require('../spec/Request');
 var fetch = require('../spec/fetch');
 var URL = require('dom-urls');
+var _Storage = require('../lib/_Storage');
 
 module.exports = Cache;
 
@@ -40,6 +41,7 @@ Cache.persistValue = function (key, value) {
 
 function Cache() {
     this.items = new AsyncMap();
+    hide(this, '_storage', new _Storage());
     var args = [].slice.call(arguments);
     args.forEach(function (url) {
         this.add(new URL(url));

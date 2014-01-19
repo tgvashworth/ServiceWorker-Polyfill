@@ -4,15 +4,10 @@ var chalk = require('chalk');
 
 module.exports = ServiceWorker;
 
-function ServiceWorker(workerUrl) {
+function ServiceWorker(workerUrl, glob) {
     this._eventListeners = [];
 
-    // TODO: replace this with a constructor param.
-    // Something like _CacheLists should store a CacheList per origin
-    this.caches = new CacheList();
-
-    // TODO: work out why this is needed, hopefully remove
-    this.caches.origin = workerUrl.origin;
+    this.caches = new CacheList(glob);
 
     // importScripts requires execution context info, so it's handled in _Worker.js
     // this.importScripts = ...
@@ -67,8 +62,8 @@ ServiceWorker.prototype.clearInterval = clearInterval;
 
 ServiceWorker.prototype.Map = require('../spec/Map');
 ServiceWorker.prototype.AsyncMap = require('../spec/AsyncMap');
-ServiceWorker.prototype.Cache = require('../spec/Cache');
 ServiceWorker.prototype.CacheList = require('../spec/CacheList');
+ServiceWorker.prototype.Cache = require('../spec/Cache');
 ServiceWorker.prototype.Event = require('../spec/Event');
 ServiceWorker.prototype.InstallEvent = require('../spec/InstallEvent');
 ServiceWorker.prototype.FetchEvent = require('../spec/FetchEvent');
