@@ -1,8 +1,8 @@
-# ServiceWorker demo
+# ServiceWorker Polyfill
 
 This is a polyfill for the [ServiceWorker](https://github.com/slightlyoff/ServiceWorker) specification. The idea is to enable exploration of the ServiceWorker API and the implications it has for users, applications and developer workflow.
 
-**NOTE:** This may be broken for you. Please [submit an issue](https://github.com/phuu/serviceworker-demo/issues/new).
+**NOTE:** This may be broken for you. Please [submit an issue](https://github.com/phuu/serviceworker-polyfill/issues/new).
 
 ## Setup
 
@@ -46,4 +46,4 @@ There's also registration, install and activation steps. Check the spec for this
 
 ## Contributing
 
-[Submit an issue](https://github.com/phuu/serviceworker-demo/issues/new) or pull request!
+[Submit an issue](https://github.com/phuu/serviceworker-polyfill/issues/new) or pull request!
