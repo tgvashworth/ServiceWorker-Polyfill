@@ -5,7 +5,7 @@ var browserLauncher = require('./browserLauncher');
 var startServer = require('./server').startServer;
 var chalk = require('chalk');
 
-var issueLink = chalk.blue('https://github.com/phuu/serviceworker-demo/issues/new');
+var issueLink = chalk.blue('https://github.com/phuu/serviceworker-polyfill/issues/new');
 
 var argvConfig = require('optimist')
     .usage('ServiceWorker polyfill.\nPlease submit issues at ' + issueLink)
