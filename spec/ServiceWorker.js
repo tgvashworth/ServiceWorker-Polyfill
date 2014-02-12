@@ -5,6 +5,8 @@ var chalk = require('chalk');
 module.exports = ServiceWorker;
 
 function ServiceWorker(workerUrl) {
+    var serviceWorkerScope = this;
+
     this._eventListeners = [];
 
     // TODO: replace this with a constructor param.
@@ -24,6 +26,18 @@ function ServiceWorker(workerUrl) {
     Object.defineProperty(this, 'version', {
         get: function() { return _version; },
         set: function(val) { _version = val; }
+    });
+
+    // Cater for basic event properties eg onfetch
+    var simpleEventFunctions = {};
+    ['install', 'activate', 'fetch'].forEach(function(type) {
+        Object.defineProperty(serviceWorkerScope, 'on' + type, {
+            get: function() { return simpleEventFunctions[type]; },
+            set: function(listener) {
+                serviceWorkerScope._eventListeners[type] = [listener];
+                simpleEventFunctions[type] = listener;
+            }
+        });
     });
 }
 
