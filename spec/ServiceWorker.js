@@ -13,9 +13,6 @@ function ServiceWorker(workerUrl) {
     // Something like _CacheLists should store a CacheList per origin
     this.caches = new CacheList();
 
-    // TODO: work out why this is needed, hopefully remove
-    this.caches.origin = workerUrl.origin;
-
     // importScripts requires execution context info, so it's handled in _Worker.js
     // this.importScripts = ...
 
