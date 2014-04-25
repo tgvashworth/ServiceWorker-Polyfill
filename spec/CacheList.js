@@ -8,7 +8,6 @@ module.exports = CacheList;
 
 function CacheList() {
     AsyncMap.apply(this, arguments);
-    this.origin = 'none://none';
 }
 
 CacheList.prototype.set = function (key, cache) {

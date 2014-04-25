@@ -5,14 +5,13 @@ var chalk = require('chalk');
 module.exports = ServiceWorker;
 
 function ServiceWorker(workerUrl) {
+    var serviceWorkerScope = this;
+
     this._eventListeners = [];
 
     // TODO: replace this with a constructor param.
     // Something like _CacheLists should store a CacheList per origin
     this.caches = new CacheList();
-
-    // TODO: work out why this is needed, hopefully remove
-    this.caches.origin = workerUrl.origin;
 
     // importScripts requires execution context info, so it's handled in _Worker.js
     // this.importScripts = ...
@@ -24,6 +23,18 @@ function ServiceWorker(workerUrl) {
     Object.defineProperty(this, 'version', {
         get: function() { return _version; },
         set: function(val) { _version = val; }
+    });
+
+    // Cater for basic event properties eg onfetch
+    var simpleEventFunctions = {};
+    ['install', 'activate', 'fetch'].forEach(function(type) {
+        Object.defineProperty(serviceWorkerScope, 'on' + type, {
+            get: function() { return simpleEventFunctions[type]; },
+            set: function(listener) {
+                serviceWorkerScope._eventListeners[type] = [listener];
+                simpleEventFunctions[type] = listener;
+            }
+        });
     });
 }
 

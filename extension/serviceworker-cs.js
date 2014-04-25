@@ -105,7 +105,8 @@ function polyfill() {
             callRemote('postMessage', msg, window.location.toString());
         },
         register: function (workerUrl, opts) {
-            callRemote('register', window.location.href, resolveUrl(opts.scope), resolveUrl(workerUrl));
+            opts = opts || {};
+            callRemote('register', window.location.href, resolveUrl(opts.scope || "/*"), resolveUrl(workerUrl));
         }
     };
 }
